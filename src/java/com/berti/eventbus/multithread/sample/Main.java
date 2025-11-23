@@ -38,7 +38,7 @@ public class Main {
         try {
 
             eventBus = new MultiThreadedEventBus<>(
-                    50, SampleEvent.class, SampleEvent::new, new SampleEventDataSetter());
+                    500, SampleEvent.class, SampleEvent::new, new SampleEventDataSetter());
             eventBus.start();
 
             SampleEventBusSubscriber subscriber1 = new SampleEventBusSubscriber("X");

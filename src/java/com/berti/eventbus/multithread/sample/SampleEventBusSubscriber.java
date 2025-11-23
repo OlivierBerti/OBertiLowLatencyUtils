@@ -13,7 +13,7 @@ public class SampleEventBusSubscriber implements EventBusSubscriber<SampleEvent>
 
     private final String name;
 
-    private Object[] toLog= new Object[6];
+    private Object[] toLog= new Object[5];
 
     public SampleEventBusSubscriber(String name) {
         this.name = name;
@@ -26,10 +26,9 @@ public class SampleEventBusSubscriber implements EventBusSubscriber<SampleEvent>
         toLog[1]=event.getEventNumber();
         toLog[2]=event.getValue();
         toLog[3]=event.getProducerId();
-        toLog[4]=event.getCreationTime();
-        toLog[5]=event.getLatency();
+        toLog[4]=event.getLatency();
 
-        logger.log(Level.INFO, "{0} received event {1} | {2} | {3} | {4} | {5}", toLog);
+        logger.log(Level.INFO, "{0} received event {1} | {2} | {3} | {4} ", toLog);
     }
 
 }

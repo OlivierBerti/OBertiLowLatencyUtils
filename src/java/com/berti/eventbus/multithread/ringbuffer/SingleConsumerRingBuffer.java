@@ -32,7 +32,7 @@ public class SingleConsumerRingBuffer<T> {
 
 
     @SuppressWarnings("unchecked")
-    public SingleConsumerRingBuffer(int length, Class<T> clazz, Supplier<T> supplier, DataSetter<T> dataSetter) throws RingBufferException {
+    public SingleConsumerRingBuffer(int length, Supplier<T> supplier, DataSetter<T> dataSetter) throws RingBufferException {
 
         Supplier<IndexedElement<T>> elementSupplier = () -> new IndexedElement<>(supplier);
         this.dataSetter = dataSetter;
@@ -41,22 +41,23 @@ public class SingleConsumerRingBuffer<T> {
 
     }
 
-    public void push(T event) throws RingBufferException {
+    public boolean push(T event) throws RingBufferException {
         int indexToWrite = lastWritten.getAndIncrement();
         int lastActiveIndex = lastRead.get();
 
-        // Check we are not writing into a not yet read element
+        // Check we are not writing into a not yet read element IOW if the RingBuffer is not congested
         if (indexToWrite - lastActiveIndex >= ringBuffer.getLength()) {
-            throw new RingBufferException("RingBuffer congested!! event = "+ event +", index to write=" + indexToWrite + ", lastActiveIndex=" + lastActiveIndex) ;
+            return false;
         }
 
         IndexedElement<T> indexedElement = ringBuffer.get(indexToWrite);
         dataSetter.copyData(event, indexedElement.event);
         indexedElement.index = indexToWrite;
+        return true;
     }
 
 
-    public T poll(T event) throws RingBufferException {
+    public T poll(T event) {
         if (lastRead.get() >= lastWritten.get()) {
             // no pending event
             return null;
