@@ -9,7 +9,7 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class MultiThreadedEventBus<T> extends AbstractRunnableModule<T> implements EventBus<T> {
+public class MultiThreadedEventBus<T> extends AbstractRunnableRingBufferedModule<T> implements AdvancedEventBus<T> {
 
     private static final Logger LOG = Logger.getLogger(MultiThreadedEventBus.class.getName());
 
@@ -31,13 +31,27 @@ public class MultiThreadedEventBus<T> extends AbstractRunnableModule<T> implemen
 
     @Override
     public void addSubscriber(Class<T> clazz, EventBusSubscriber<T> subscriber, Supplier<T> supplier) throws EventBusException {
-        addSubscriberForFilteredEvents(clazz, subscriber, supplier, null);
+        doAddSubscriber(clazz, subscriber, supplier, null, false);
     }
 
     @Override
     public void addSubscriberForFilteredEvents(
             Class<T> clazz, EventBusSubscriber<T> subscriber, Supplier<T> supplier, Function<T, Boolean> filter) throws EventBusException {
+        doAddSubscriber(clazz, subscriber, supplier, filter, false);
+    }
 
+    @Override
+    public void addSubscriberWithConflation(Class<T> clazz, EventBusSubscriber<T> subscriber, Supplier<T> supplier) throws EventBusException {
+        doAddSubscriber(clazz, subscriber, supplier, null, true);
+    }
+
+    @Override
+    public void addSubscriberForFilteredEventsWithConflation(Class<T> clazz, EventBusSubscriber<T> subscriber, Supplier<T> supplier, Function<T, Boolean> filter) throws EventBusException {
+        doAddSubscriber(clazz, subscriber, supplier, filter, true);
+    }
+
+    private void doAddSubscriber(
+            Class<T> clazz, EventBusSubscriber<T> subscriber, Supplier<T> supplier, Function<T, Boolean> filter, boolean conflationMode) throws EventBusException {
         if (listeners.containsKey(subscriber)) {
             return;
         }
@@ -60,6 +74,7 @@ public class MultiThreadedEventBus<T> extends AbstractRunnableModule<T> implemen
             throw new EventBusException("Error when trying to add subscriber: " + e.getMessage(), e);
         }
     }
+
 
     @Override
     protected void processEvent(T event) throws Exception {

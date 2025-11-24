@@ -67,14 +67,25 @@ public class SingleConsumerRingBuffer<T> {
             // no pending event
             return null;
         }
+        return getEvent(event, lastRead + 1);
+    }
 
-        int indexToRead = lastRead + 1;
+    public T pollLast(T event) {
+        int lastWrittenindex = lastWritten.get();
+        if (lastRead >= lastWrittenindex) {
+            // no pending event
+            return null;
+        }
+        return getEvent(event, lastWrittenindex);
+    }
+
+    private T getEvent(T event, int indexToRead) {
         IndexedElement<T> indexedElement = ringBuffer.get(indexToRead);
         T ringBufferEvent = readWhenAvailable(indexedElement, indexToRead);
 
         if (ringBufferEvent != null) {
             dataSetter.copyData(ringBufferEvent, event);
-            lastRead ++;
+            lastRead = indexToRead;
             return event;
         }
         else {

@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 // Note: We assume all its inputs are on the same type and on the same purpose
 // but it is possible to create a eventClass T with multiple internal buffers of different types
 // plus a variable to tell the module which is the real type and how it must be processed
-public abstract class AbstractRunnableModule<T> {
+public abstract class AbstractRunnableRingBufferedModule<T> {
 
     private final SingleConsumerRingBuffer<T> internalRingBuffer;
 
@@ -34,7 +34,9 @@ public abstract class AbstractRunnableModule<T> {
 
     protected Function<T, Boolean> filter = null;
 
-    protected AbstractRunnableModule(
+    protected boolean conflationMode = false;
+
+    protected AbstractRunnableRingBufferedModule(
             int ringBufferLength, Supplier<T> supplier, DataSetter<T> dataSetter,
             long tempoInNanos) throws RingBufferException {
         this.eventBuffer = supplier.get();
@@ -73,7 +75,11 @@ public abstract class AbstractRunnableModule<T> {
 
 
     public void start() {
-        executor.execute(this::run);
+        if (conflationMode) {
+            executor.execute(this::runWithConflation);
+        } else {
+            executor.execute(this::run);
+        }
     }
 
     public void stop() {
@@ -88,12 +94,23 @@ public abstract class AbstractRunnableModule<T> {
     public void run() {
         while (!end) {
             try {
-                if (internalRingBuffer.poll(eventBuffer) != null) {
+                while (internalRingBuffer.poll(eventBuffer) != null) {
                     processEvent(eventBuffer);
                 }
-                else {
-                    TimeUtils.sleep(tempo);
+                TimeUtils.sleep(tempo);
+            } catch (Exception e) {
+                getLogger().log(Level.SEVERE, "Event bus ring buffer error: " + e.getMessage(), e);
+            }
+        }
+    }
+
+    public void runWithConflation() {
+        while (!end) {
+            try {
+                while (internalRingBuffer.pollLast(eventBuffer) != null) {
+                    processEvent(eventBuffer);
                 }
+                TimeUtils.sleep(tempo);
             } catch (Exception e) {
                 getLogger().log(Level.SEVERE, "Event bus ring buffer error: " + e.getMessage(), e);
             }

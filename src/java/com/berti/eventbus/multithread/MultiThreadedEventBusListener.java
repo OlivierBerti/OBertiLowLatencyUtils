@@ -3,14 +3,13 @@ package com.berti.eventbus.multithread;
 import com.berti.eventbus.DataSetter;
 import com.berti.eventbus.EventBusSubscriber;
 import com.berti.eventbus.multithread.ringbuffer.RingBufferException;
-import lombok.Setter;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class MultiThreadedEventBusListener<T> extends AbstractRunnableModule<T> {
+public class MultiThreadedEventBusListener<T> extends AbstractRunnableRingBufferedModule<T> {
 
     private static final Logger LOG = Logger.getLogger(MultiThreadedEventBusListener.class.getName());
 
