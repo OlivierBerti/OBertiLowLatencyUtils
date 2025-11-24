@@ -10,8 +10,6 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static java.util.concurrent.Executors.newSingleThreadExecutor;
-
 public class MultiThreadedEventBusListener<T> extends AbstractRunnableModule<T> {
 
     private static final Logger LOG = Logger.getLogger(MultiThreadedEventBusListener.class.getName());
@@ -20,11 +18,9 @@ public class MultiThreadedEventBusListener<T> extends AbstractRunnableModule<T> 
 
     private final EventBusSubscriber<T> subscriber;
 
-    @Setter
-    private volatile boolean end = false;
-
-    public MultiThreadedEventBusListener(int bufferMaxSize, Class<T> eventClass, EventBusSubscriber<T> eventBusSubscriber,
-                                         Supplier<T> supplier, DataSetter<T> dataSetter, Function<T, Boolean> filter) throws RingBufferException {
+    public MultiThreadedEventBusListener(
+            int bufferMaxSize, Class<T> eventClass, EventBusSubscriber<T> eventBusSubscriber,
+            Supplier<T> supplier, DataSetter<T> dataSetter, Function<T, Boolean> filter) throws RingBufferException {
         super(bufferMaxSize, supplier, dataSetter, TEMPO_IN_NANOS);
         this.subscriber = eventBusSubscriber;
         this.filter = filter;

@@ -1,20 +1,14 @@
 package com.berti.eventbus.multithread.sample;
 
 import com.berti.eventbus.multithread.MultiThreadedEventBus;
-import com.berti.eventbus.multithread.MultiThreadedEventBusListener;
 import com.berti.util.TimeUtils;
 
 import java.io.BufferedInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-
-import static java.util.concurrent.Executors.newFixedThreadPool;
 
 public class Main {
 
@@ -46,8 +40,8 @@ public class Main {
             SampleEventBusSubscriber subscriber3 = new SampleEventBusSubscriber("Z");
 
             eventBus.addSubscriber(SampleEvent.class, subscriber1, SampleEvent::new);
-            eventBus.addSubscriber(SampleEvent.class, subscriber2, SampleEvent::new);
-            eventBus.addSubscriber(SampleEvent.class, subscriber3, SampleEvent::new);
+            eventBus.addSubscriberForFilteredEvents(SampleEvent.class, subscriber2, SampleEvent::new, event->event.getValue()%7==0);
+            eventBus.addSubscriberForFilteredEvents(SampleEvent.class, subscriber3, SampleEvent::new, event->event.getValue()%3==0);
 
             producer1 = new SampleEventProducer("A", eventBus, 100, 1001, 20000);
             producer2 = new SampleEventProducer("B", eventBus, 100, 2001,20000);

@@ -25,5 +25,13 @@ public class TimeUtils {
         }
     }
 
+    public static void sleep(Duration duration) {
+        try {
+            Thread.sleep(duration);
+        } catch (InterruptedException e) {
+            LOG.log(Level.WARNING, "Interrupted thread", e);
+        }
+    }
+
     private TimeUtils() {}
 }

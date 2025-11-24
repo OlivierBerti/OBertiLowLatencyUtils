@@ -11,6 +11,8 @@ public class SampleEventBusSubscriber implements EventBusSubscriber<SampleEvent>
 
     private static final Logger logger = Logger.getLogger(SampleEventBusSubscriber.class.getName());
 
+    private static final String FORMATTED_MSG = "{0} received event {3}{1} value = {2} duration = {4} ms";
+
     private final String name;
 
     private Object[] toLog= new Object[5];
@@ -28,7 +30,6 @@ public class SampleEventBusSubscriber implements EventBusSubscriber<SampleEvent>
         toLog[3]=event.getProducerId();
         toLog[4]=event.getLatency();
 
-        logger.log(Level.INFO, "{0} received event {1} | {2} | {3} | {4} ", toLog);
+        logger.log(Level.INFO, FORMATTED_MSG, toLog);
     }
-
 }

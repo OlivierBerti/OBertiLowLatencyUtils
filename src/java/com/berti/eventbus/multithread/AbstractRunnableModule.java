@@ -1,11 +1,11 @@
 package com.berti.eventbus.multithread;
 
 import com.berti.eventbus.DataSetter;
-import com.berti.eventbus.EventBusException;
 import com.berti.eventbus.multithread.ringbuffer.RingBufferException;
 import com.berti.eventbus.multithread.ringbuffer.SingleConsumerRingBuffer;
 import com.berti.util.TimeUtils;
 
+import java.time.Duration;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
@@ -30,7 +30,7 @@ public abstract class AbstractRunnableModule<T> {
 
     private final T eventBuffer;
 
-    private final long tempoInNanos;
+    private final Duration tempo;
 
     protected Function<T, Boolean> filter = null;
 
@@ -40,12 +40,28 @@ public abstract class AbstractRunnableModule<T> {
         this.eventBuffer = supplier.get();
         this.internalRingBuffer = new SingleConsumerRingBuffer<>(ringBufferLength, supplier, dataSetter);
         this.executor = Executors.newSingleThreadExecutor();
-        this.tempoInNanos =  tempoInNanos;
+        this.tempo =  Duration.ofNanos(tempoInNanos);
+    }
+
+
+    public void pushEvent(T event) throws Exception {
+        if (event == null) {
+            // should never happen
+            return;
+        }
+        if (filter != null && !filter.apply(event)) {
+            // event is filtered
+            return;
+        }
+        boolean ringFull = !internalRingBuffer.push(event);
+        if (ringFull)  {
+            onRingBufferFull(event);
+        }
     }
 
     public void publishEvent(T event) {
         try {
-            this.internalRingBuffer.push(event);
+            this.pushEvent(event);
         } catch (Exception e) {
             getLogger().log(Level.SEVERE, "Error while pushing into internal ringBuffer " + e.getMessage(), e);
         }
@@ -76,7 +92,7 @@ public abstract class AbstractRunnableModule<T> {
                     processEvent(eventBuffer);
                 }
                 else {
-                    TimeUtils.sleepNanos(tempoInNanos);
+                    TimeUtils.sleep(tempo);
                 }
             } catch (Exception e) {
                 getLogger().log(Level.SEVERE, "Event bus ring buffer error: " + e.getMessage(), e);
@@ -84,20 +100,6 @@ public abstract class AbstractRunnableModule<T> {
         }
     }
 
-    public void pushEvent(T event) throws Exception {
-        if (event == null) {
-            // should never happen
-            return;
-        }
-        if (filter != null && !filter.apply(event)) {
-            // event is filtered
-            return;
-        }
-        boolean ringFull = !internalRingBuffer.push(event);
-        if (ringFull)  {
-            onRingBufferFull(event);
-        }
-    }
 
     protected abstract void onRingBufferFull(T event) throws Exception;
 

@@ -1,12 +1,15 @@
 package com.berti.eventbus.multithread.ringbuffer;
 
 import com.berti.eventbus.DataSetter;
+import com.berti.util.TimeUtils;
+import lombok.Setter;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 
 // This class implements a multiple producer/single consumer ring buffer
+// In a real dev I certainly would use LMAX Disruptor
 public class SingleConsumerRingBuffer<T> {
 
     private static final class IndexedElement<T> {
@@ -28,7 +31,9 @@ public class SingleConsumerRingBuffer<T> {
 
     private final AtomicInteger lastWritten = new AtomicInteger(0);
 
-    private final AtomicInteger lastRead = new AtomicInteger(-1);
+    //Unlike lastWritten, lastRead is  updated by a single thread
+    // => a volatile int is good enough
+    private volatile int lastRead = -1;
 
 
     @SuppressWarnings("unchecked")
@@ -41,9 +46,9 @@ public class SingleConsumerRingBuffer<T> {
 
     }
 
-    public boolean push(T event) throws RingBufferException {
+    public boolean push(T event) {
         int indexToWrite = lastWritten.getAndIncrement();
-        int lastActiveIndex = lastRead.get();
+        int lastActiveIndex = lastRead;
 
         // Check we are not writing into a not yet read element IOW if the RingBuffer is not congested
         if (indexToWrite - lastActiveIndex >= ringBuffer.getLength()) {
@@ -58,20 +63,30 @@ public class SingleConsumerRingBuffer<T> {
 
 
     public T poll(T event) {
-        if (lastRead.get() >= lastWritten.get()) {
+        if (lastRead >= lastWritten.get()) {
             // no pending event
             return null;
         }
 
-        int indexToRead = lastRead.get() + 1;
+        int indexToRead = lastRead + 1;
         IndexedElement<T> indexedElement = ringBuffer.get(indexToRead);
+        T ringBufferEvent = readWhenAvailable(indexedElement, indexToRead);
 
-        // this test ensures we are not trying to read the element before its producer finished to write it
-        if (indexedElement.index != indexToRead) {
+        if (ringBufferEvent != null) {
+            dataSetter.copyData(ringBufferEvent, event);
+            lastRead ++;
+            return event;
+        }
+        else {
             return null;
         }
-        dataSetter.copyData(indexedElement.event, event);
-        lastRead.incrementAndGet();
-        return event;
+    }
+
+    private T readWhenAvailable(IndexedElement<T> indexedElement, int indexToRead) {
+        // this test ensures we are not trying to read the element before its producer finished to write it
+        while (indexedElement.index != indexToRead) {
+            Thread.yield();
+        }
+        return indexedElement.event;
     }
 }
