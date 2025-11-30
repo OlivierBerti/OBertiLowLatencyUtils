@@ -1,0 +1,50 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        mavenLocal()
+        //mavenCentral artifactUrls: ["https://mvnrepository.com"]
+        gradlePluginPortal()
+    }
+}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+apply plugin: 'java-library'
+apply plugin: 'java'
+apply plugin: 'maven-publish'
+
+group 'com.berti'
+version '1.0.0'
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src/java'
+        }
+        resources {
+            srcDir 'src/resources'
+        }
+    }
+    test {
+        java {
+            srcDir 'test/java'
+        }
+        resources {
+            srcDir 'test/resources'
+        }
+    }
+}
+dependencies {
+    compileOnly "org.projectlombok:lombok:1.18.38"
+    annotationProcessor "org.projectlombok:lombok:1.18.38"
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
+    implementation "org.apache.commons:commons-collections4:4.5.0"
+    implementation "org.apache.commons:commons-lang3:3.20.0"
+
+    testImplementation "junit:junit:4.13.2"
+    testImplementation "org.mockito:mockito-core:5.20.0"
+    testCompileOnly 'org.projectlombok:lombok:1.18.38'
+}
