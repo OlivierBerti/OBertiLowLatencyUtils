@@ -1,4 +1,4 @@
-package com.berti.eventbus.multithread.sample;
+package com.berti.data;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

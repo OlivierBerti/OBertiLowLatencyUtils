@@ -29,6 +29,10 @@ public abstract class AbstractRunnableRingBufferedModule<T> {
 
     private final Executor executor;
 
+    protected final Supplier<T> supplier;
+
+    protected final DataSetter<T> dataSetter;
+
     private volatile boolean end = false;
 
     private final T eventBuffer;
@@ -45,6 +49,8 @@ public abstract class AbstractRunnableRingBufferedModule<T> {
     protected AbstractRunnableRingBufferedModule(
             RingBufferConfiguration ringBufferConfiguration,
             Supplier<T> supplier, DataSetter<T> dataSetter) throws RingBufferException {
+        this.supplier = supplier;
+        this.dataSetter = dataSetter;
         this.eventBuffer = supplier.get();
         int ringBufferSize = ringBufferConfiguration.getRingBufferSize();
         if (ringBufferConfiguration.isMultiProducer()) {
@@ -134,7 +140,7 @@ public abstract class AbstractRunnableRingBufferedModule<T> {
 
     protected abstract void onRingBufferFull(T event) throws Exception;
 
-    protected abstract void processEvent(T event) throws Exception;
+    protected abstract void processEvent(T eventBuffer) throws Exception;
 
     protected abstract Logger getLogger();
 }

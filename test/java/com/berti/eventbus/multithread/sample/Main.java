@@ -1,5 +1,7 @@
 package com.berti.eventbus.multithread.sample;
 
+import com.berti.data.SampleEvent;
+import com.berti.data.SampleEventDataSetter;
 import com.berti.eventbus.multithread.MultiThreadedEventBus;
 import com.berti.util.TimeUtils;
 
@@ -32,7 +34,7 @@ public class Main {
         try {
 
             eventBus = new MultiThreadedEventBus<>(
-                    500, SampleEvent.class, SampleEvent::new, new SampleEventDataSetter(), true);
+                    500,  SampleEvent::new, new SampleEventDataSetter(), true);
             eventBus.start();
 
             SampleEventBusSubscriber subscriber1 = new SampleEventBusSubscriber("X");

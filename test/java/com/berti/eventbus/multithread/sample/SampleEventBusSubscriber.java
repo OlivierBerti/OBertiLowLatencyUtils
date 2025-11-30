@@ -1,5 +1,6 @@
 package com.berti.eventbus.multithread.sample;
 
+import com.berti.data.SampleEvent;
 import com.berti.eventbus.EventBusSubscriber;
 
 import java.time.Instant;

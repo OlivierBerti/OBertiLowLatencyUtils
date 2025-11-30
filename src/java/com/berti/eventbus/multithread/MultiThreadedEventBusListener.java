@@ -26,8 +26,10 @@ public class MultiThreadedEventBusListener<T> extends AbstractRunnableRingBuffer
     }
 
     @Override
-    protected void processEvent(T event) {
-        subscriber.onEvent(event);
+    protected void processEvent(T eventBuffer) {
+        T newEvent = supplier.get();
+        dataSetter.copyData(eventBuffer, newEvent);
+        subscriber.onEvent(newEvent);
     }
 
     @Override
