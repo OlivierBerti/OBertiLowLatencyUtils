@@ -24,7 +24,7 @@ public class MultiThreadedEventBus<T> extends AbstractRunnableRingBufferedModule
 
     public MultiThreadedEventBus(int ringBufferLength, Supplier<T> supplier, DataSetter<T> dataSetter,
                                  boolean multiProducer) throws RingBufferException {
-        super(new RingBufferConfiguration(ringBufferLength, TEMPO_IN_NANOS, multiProducer), supplier, dataSetter);
+        super(new RingBufferConfiguration(ringBufferLength, TEMPO_IN_NANOS, multiProducer), supplier, dataSetter, false);
         this.dataSetter = dataSetter;
         this.ringBufferLength = ringBufferLength;
     }
