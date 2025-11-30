@@ -1,6 +1,6 @@
 package com.berti.eventbus.multithread;
 
-import com.berti.eventbus.DataSetter;
+import com.berti.data.DataSetter;
 import com.berti.eventbus.EventBusSubscriber;
 import com.berti.eventbus.multithread.ringbuffer.RingBufferException;
 
@@ -20,7 +20,7 @@ public class MultiThreadedEventBusListener<T> extends AbstractRunnableRingBuffer
     public MultiThreadedEventBusListener(
             int bufferMaxSize, Class<T> eventClass, EventBusSubscriber<T> eventBusSubscriber,
             Supplier<T> supplier, DataSetter<T> dataSetter, Function<T, Boolean> filter) throws RingBufferException {
-        super(bufferMaxSize, supplier, dataSetter, TEMPO_IN_NANOS);
+        super(new RingBufferConfiguration(bufferMaxSize, TEMPO_IN_NANOS, false), supplier, dataSetter);
         this.subscriber = eventBusSubscriber;
         this.filter = filter;
     }

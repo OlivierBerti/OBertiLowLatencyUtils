@@ -1,6 +1,7 @@
 package com.berti.eventbus;
 
 public class EventBusException extends Exception {
+
     public EventBusException(String message) {
         super(message);
     }

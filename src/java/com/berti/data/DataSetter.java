@@ -1,4 +1,4 @@
-package com.berti.eventbus;
+package com.berti.data;
 
 public interface DataSetter<T> {
 

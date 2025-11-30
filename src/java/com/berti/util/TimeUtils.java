@@ -8,7 +8,6 @@ public class TimeUtils {
 
     private static final Logger LOG = Logger.getLogger(TimeUtils.class.getName());
 
-
     public static void sleepMillis(long millis) {
         try {
             Thread.sleep(millis);

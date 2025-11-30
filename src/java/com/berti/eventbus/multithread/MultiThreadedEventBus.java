@@ -1,5 +1,6 @@
 package com.berti.eventbus.multithread;
 
+import com.berti.data.DataSetter;
 import com.berti.eventbus.*;
 import com.berti.eventbus.multithread.ringbuffer.RingBufferException;
 
@@ -21,10 +22,9 @@ public class MultiThreadedEventBus<T> extends AbstractRunnableRingBufferedModule
 
     private volatile Map<EventBusSubscriber<T>, MultiThreadedEventBusListener<T>> listeners = new IdentityHashMap<>();
 
-
     public MultiThreadedEventBus(int ringBufferLength, Class<T> clazz,
-                                 Supplier<T> supplier, DataSetter<T> dataSetter) throws RingBufferException {
-        super(ringBufferLength, supplier, dataSetter, TEMPO_IN_NANOS);
+                                 Supplier<T> supplier, DataSetter<T> dataSetter, boolean multiProducer) throws RingBufferException {
+        super(new RingBufferConfiguration(ringBufferLength, TEMPO_IN_NANOS, multiProducer), supplier, dataSetter);
         this.dataSetter = dataSetter;
         this.ringBufferLength = ringBufferLength;
     }
@@ -74,7 +74,6 @@ public class MultiThreadedEventBus<T> extends AbstractRunnableRingBufferedModule
             throw new EventBusException("Error when trying to add subscriber: " + e.getMessage(), e);
         }
     }
-
 
     @Override
     protected void processEvent(T event) throws Exception {

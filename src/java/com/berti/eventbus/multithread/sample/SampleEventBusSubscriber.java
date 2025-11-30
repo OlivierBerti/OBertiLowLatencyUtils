@@ -6,7 +6,6 @@ import java.time.Instant;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 public class SampleEventBusSubscriber implements EventBusSubscriber<SampleEvent> {
 
     private static final Logger logger = Logger.getLogger(SampleEventBusSubscriber.class.getName());

@@ -1,16 +1,13 @@
 package com.berti.eventbus.multithread.ringbuffer;
 
-import com.berti.eventbus.DataSetter;
-import com.berti.util.TimeUtils;
-import lombok.Setter;
+import com.berti.data.DataSetter;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 
-// This class implements a multiple producer/single consumer ring buffer
+// This class implements a single producer/single consumer ring buffer
 // In a real dev I certainly would use LMAX Disruptor
-public class SingleConsumerRingBuffer<T> {
+public class SingleProducerSingleConsumerRingBuffer<T> implements RingBuffer<T> {
 
     private static final class IndexedElement<T> {
 
@@ -25,35 +22,30 @@ public class SingleConsumerRingBuffer<T> {
        }
     }
 
-    private final RingBuffer<IndexedElement<T>> ringBuffer;
+    protected final BaseRingBuffer<IndexedElement<T>> ringBuffer;
 
-    private final DataSetter<T> dataSetter;
+    protected final Supplier<T> supplier;
 
-    private final AtomicInteger lastWritten = new AtomicInteger(0);
+    protected final DataSetter<T> dataSetter;
 
-    //Unlike lastWritten, lastRead is  updated by a single thread
-    // => a volatile int is good enough
+    private volatile int lastWritten = -1;
+
     private volatile int lastRead = -1;
 
 
     @SuppressWarnings("unchecked")
-    public SingleConsumerRingBuffer(int length, Supplier<T> supplier, DataSetter<T> dataSetter) throws RingBufferException {
+    public SingleProducerSingleConsumerRingBuffer(int length, Supplier<T> supplier, DataSetter<T> dataSetter) throws RingBufferException {
 
         Supplier<IndexedElement<T>> elementSupplier = () -> new IndexedElement<>(supplier);
+        this.supplier = supplier;
         this.dataSetter = dataSetter;
         IndexedElement<T> element = new IndexedElement<>(supplier);
-        this.ringBuffer = new RingBuffer<>(length, (Class<IndexedElement<T>>) element.getClass(), elementSupplier);
+        this.ringBuffer = new BaseRingBuffer<>(length, (Class<IndexedElement<T>>) element.getClass(), elementSupplier);
 
     }
 
     public boolean push(T event) {
-        int indexToWrite = lastWritten.getAndIncrement();
-        int lastActiveIndex = lastRead;
-
-        // Check we are not writing into a not yet read element IOW if the RingBuffer is not congested
-        if (indexToWrite - lastActiveIndex >= ringBuffer.getLength()) {
-            return false;
-        }
+        int indexToWrite = this.claimWriteIndex();
 
         IndexedElement<T> indexedElement = ringBuffer.get(indexToWrite);
         dataSetter.copyData(event, indexedElement.event);
@@ -61,9 +53,21 @@ public class SingleConsumerRingBuffer<T> {
         return true;
     }
 
+    private int claimWriteIndex() {
+        int lastReadIndex = lastRead;
+
+        // Check we are not writing into a not yet read element IOW if the RingBuffer is not congested
+        if (lastWritten - lastReadIndex >= ringBuffer.getLength()-1) {
+            return -1;
+        }
+
+        lastWritten ++;
+        return lastWritten;
+    }
+
 
     public T poll(T event) {
-        if (lastRead >= lastWritten.get()) {
+        if (lastRead >= lastWritten) {
             // no pending event
             return null;
         }
@@ -71,7 +75,7 @@ public class SingleConsumerRingBuffer<T> {
     }
 
     public T pollLast(T event) {
-        int lastWrittenindex = lastWritten.get();
+        int lastWrittenindex = lastWritten;
         if (lastRead >= lastWrittenindex) {
             // no pending event
             return null;
@@ -98,6 +102,17 @@ public class SingleConsumerRingBuffer<T> {
         while (indexedElement.index != indexToRead) {
             Thread.yield();
         }
-        return indexedElement.event;
+        T result = indexedElement.event;
+        return isElementReadable(result) ? result :null;
+    }
+
+    // By redefining this method, we can tmporarily block the reading (see WinowedQueue)
+    // Just be sure the condition can't remain false forever
+    protected boolean isElementReadable(T result) {
+        return true;
+    }
+
+    public boolean isEmpty() {
+        return lastRead >= lastWritten;
     }
 }

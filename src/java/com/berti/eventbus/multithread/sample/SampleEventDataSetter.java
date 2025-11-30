@@ -1,6 +1,6 @@
 package com.berti.eventbus.multithread.sample;
 
-import com.berti.eventbus.DataSetter;
+import com.berti.data.DataSetter;
 
 public class SampleEventDataSetter implements DataSetter<SampleEvent> {
 
