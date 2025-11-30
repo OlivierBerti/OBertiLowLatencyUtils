@@ -18,9 +18,10 @@ public class MultiThreadedEventBusListener<T> extends AbstractRunnableRingBuffer
     private final EventBusSubscriber<T> subscriber;
 
     public MultiThreadedEventBusListener(
-            int bufferMaxSize, Class<T> eventClass, EventBusSubscriber<T> eventBusSubscriber,
-            Supplier<T> supplier, DataSetter<T> dataSetter, Function<T, Boolean> filter) throws RingBufferException {
-        super(new RingBufferConfiguration(bufferMaxSize, TEMPO_IN_NANOS, false), supplier, dataSetter);
+            int bufferMaxSize, EventBusSubscriber<T> eventBusSubscriber,
+            Supplier<T> supplier, DataSetter<T> dataSetter, Function<T, Boolean> filter, boolean conflationMode) throws RingBufferException {
+        super(new RingBufferConfiguration(bufferMaxSize, TEMPO_IN_NANOS, false),
+                supplier, dataSetter, conflationMode);
         this.subscriber = eventBusSubscriber;
         this.filter = filter;
     }

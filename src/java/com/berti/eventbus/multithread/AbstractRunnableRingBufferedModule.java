@@ -48,9 +48,10 @@ public abstract class AbstractRunnableRingBufferedModule<T> {
 
     protected AbstractRunnableRingBufferedModule(
             RingBufferConfiguration ringBufferConfiguration,
-            Supplier<T> supplier, DataSetter<T> dataSetter) throws RingBufferException {
+            Supplier<T> supplier, DataSetter<T> dataSetter, boolean conflationMode) throws RingBufferException {
         this.supplier = supplier;
         this.dataSetter = dataSetter;
+        this.conflationMode = conflationMode;
         this.eventBuffer = supplier.get();
         int ringBufferSize = ringBufferConfiguration.getRingBufferSize();
         if (ringBufferConfiguration.isMultiProducer()) {

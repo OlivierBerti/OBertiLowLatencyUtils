@@ -64,8 +64,8 @@ public class MultiThreadedEventBus<T> extends AbstractRunnableRingBufferedModule
         newListeners.putAll(this.listeners);
 
         try {
-            MultiThreadedEventBusListener<T> listener =
-                    new MultiThreadedEventBusListener<>(this.ringBufferLength, clazz, subscriber, supplier, dataSetter, filter);
+            MultiThreadedEventBusListener<T> listener = new MultiThreadedEventBusListener<>(
+                    this.ringBufferLength, subscriber, supplier, dataSetter, filter, conflationMode);
             listener.start();
             newListeners.put(subscriber, listener);
             listeners = newListeners;
