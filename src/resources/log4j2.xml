@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration monitorInterval="60">
+    <Properties>
+        <Property name="patternLayout"
+                  value="%d{HH:mm:ss:nnnnnnnnn}{UTC] [%3T] [%-6level] [%-45.45c{1.}] %replace{%msg} {[\u0001]+}{|}%n" />
+    </Properties>
+    <Appenders>
+        <Console name="CONSOLE">
+            <PatternLayout pattern="${patternLayout}" disableAnsi="false"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Root level="INFO">
+            <AppenderRef ref="CONSOLE" level="WARN"/>
+        </Root>
+    </Loggers>
+</Configuration>

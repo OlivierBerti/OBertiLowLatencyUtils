@@ -1,18 +1,19 @@
 package com.berti.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.Duration;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-public class TimeUtils {
+public final class TimeUtils {
 
-    private static final Logger LOG = Logger.getLogger(TimeUtils.class.getName());
+    private static final Logger LOG  = LoggerFactory.getLogger(TimeUtils.class);
 
     public static void sleepMillis(long millis) {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
-            LOG.log(Level.WARNING, "Interrupted thread", e);
+            LOG.warn("Interrupted thread", e);
         }
     }
 
@@ -20,7 +21,7 @@ public class TimeUtils {
         try {
             Thread.sleep(Duration.ofNanos(nanos));
         } catch (InterruptedException e) {
-            LOG.log(Level.WARNING, "Interrupted thread", e);
+            LOG.warn("Interrupted thread", e);
         }
     }
 
@@ -28,7 +29,7 @@ public class TimeUtils {
         try {
             Thread.sleep(duration);
         } catch (InterruptedException e) {
-            LOG.log(Level.WARNING, "Interrupted thread", e);
+            LOG.warn( "Interrupted thread", e);
         }
     }
 

@@ -13,8 +13,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
 
 // An abstract module runs in his own thread
 // It has its own RingBuffer to receives its inputs
@@ -83,7 +83,7 @@ public abstract class AbstractRunnableRingBufferedModule<T> {
         try {
             this.pushEvent(event);
         } catch (Exception e) {
-            getLogger().log(Level.SEVERE, "Error while pushing into internal ringBuffer " + e.getMessage(), e);
+            getLogger().error("Error while pushing into internal ringBuffer " + e.getMessage(), e);
         }
     }
 
@@ -117,7 +117,7 @@ public abstract class AbstractRunnableRingBufferedModule<T> {
                 }
                 TimeUtils.sleep(tempo);
             } catch (Exception e) {
-                getLogger().log(Level.SEVERE, "Event bus ring buffer error: " + e.getMessage(), e);
+                getLogger().error("Event bus ring buffer error: " + e.getMessage(), e);
             }
         }
     }
@@ -130,7 +130,7 @@ public abstract class AbstractRunnableRingBufferedModule<T> {
                 }
                 TimeUtils.sleep(tempo);
             } catch (Exception e) {
-                getLogger().log(Level.SEVERE, "Event bus ring buffer error: " + e.getMessage(), e);
+                getLogger().error("Event bus ring buffer error: " + e.getMessage(), e);
             }
         }
     }

@@ -7,7 +7,7 @@ import java.util.function.Supplier;
 
 
 // Here is the base structure. Should not be called outside the package
-class BaseRingBuffer<T> {
+final class BaseRingBuffer<T> {
     @Getter
     private final int length;
 

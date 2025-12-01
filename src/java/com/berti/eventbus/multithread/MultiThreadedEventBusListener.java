@@ -6,12 +6,13 @@ import com.berti.eventbus.multithread.ringbuffer.RingBufferException;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MultiThreadedEventBusListener<T> extends AbstractRunnableRingBufferedModule<T> {
 
-    private static final Logger LOG = Logger.getLogger(MultiThreadedEventBusListener.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(MultiThreadedEventBusListener.class);
 
     private static final long TEMPO_IN_NANOS = 1000;
 
@@ -36,7 +37,7 @@ public class MultiThreadedEventBusListener<T> extends AbstractRunnableRingBuffer
     @Override
     protected void onRingBufferFull(T event) {
         String msg = "Error while sending event to subscriber : RingBuffer full";
-        LOG.log(Level.SEVERE, msg);;
+        LOG.error( msg);;
     }
 
     @Override
