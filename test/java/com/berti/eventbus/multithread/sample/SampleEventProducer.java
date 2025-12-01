@@ -6,14 +6,16 @@ import com.berti.eventbus.multithread.MultiThreadedEventBusListener;
 import com.berti.util.TimeUtils;
 
 import java.time.Instant;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import lombok.extern.java.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
 public class SampleEventProducer implements Runnable {
 
-    private static final Logger LOG = Logger.getLogger(MultiThreadedEventBusListener.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(SampleEventProducer.class);
 
     private final String name;
 
@@ -46,7 +48,7 @@ public class SampleEventProducer implements Runnable {
                 eventBus.publishEvent(createSampleEvent(i, value));
             }
             catch (Exception e) {
-                LOG.log(Level.WARNING, "Error publishing event for producer " + name
+                LOG.warn("Error publishing event for producer " + name
                         + ": " + e.getMessage(), e);
             }
             TimeUtils.sleepNanos(tempoInNanos);

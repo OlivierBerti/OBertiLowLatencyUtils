@@ -10,6 +10,9 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+// With this class, each subscribe gets its own ringbuffer
+//  By doing this, I make sure a too slow consumer will block the other ones
+//  I also avoid the complexities of multi-consumer ringbuffers
 public class MultiThreadedEventBusListener<T> extends AbstractRunnableRingBufferedModule<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(MultiThreadedEventBusListener.class);

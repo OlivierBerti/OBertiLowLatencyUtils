@@ -67,7 +67,7 @@ public class SingleProducerSingleConsumerRingBuffer<T> implements RingBuffer<T> 
 
 
     public T poll(T event) {
-        if (lastRead >= lastWritten) {
+        if (isEmpty()) {
             // no pending event
             return null;
         }

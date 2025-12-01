@@ -1,6 +1,6 @@
 package com.berti.data;
 
-public class SampleEventDataSetter implements DataSetter<SampleEvent> {
+public final class SampleEventDataSetter implements DataSetter<SampleEvent> {
 
     @Override
     public void copyData(SampleEvent source, SampleEvent target) {

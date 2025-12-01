@@ -77,10 +77,10 @@ public class MultiThreadedEventBus<T> extends AbstractRunnableRingBufferedModule
     }
 
     @Override
-    protected void processEvent(T eventBuffer) throws Exception {
+    protected void processEvent(T eventBuffer) {
         Map<EventBusSubscriber<T>, MultiThreadedEventBusListener<T>> currentListeners = this.listeners;
         for (MultiThreadedEventBusListener<T> listener : currentListeners.values()) {
-            listener.pushEvent(eventBuffer);
+            listener.publishEvent(eventBuffer);
         }
     }
 

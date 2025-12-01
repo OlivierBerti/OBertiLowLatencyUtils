@@ -9,7 +9,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @EqualsAndHashCode
-public class SampleEvent {
+public final class SampleEvent {
 
     private long creationTime;
 

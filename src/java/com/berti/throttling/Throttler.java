@@ -4,8 +4,7 @@ public interface Throttler {
     // check if we can proceed (poll)
     ThrottleResult shouldProceed();
 
-    // subscribe to be told when we can proceed (Push)
-    void notifyWhenCanProceed(ThrottledEventProcessor throttledEventProcessor);
+    void  notifyWhenCanProceed(ThrottlerClient throttlerClient);
 
     enum ThrottleResult {
         PROCEED, // publish, aggregate etc
