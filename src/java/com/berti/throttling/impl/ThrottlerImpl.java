@@ -17,6 +17,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 //TODO define token
+
+// Implementation of Throttler interface
+// Please note the following restrictions:
+//   - a client may use the push mode or the poll mode but not both in the same time
+//   - the throttler can support as many clients as we want in push mode but only one client in poll mode
 public final class ThrottlerImpl implements Throttler {
 
     private static final Logger LOG = LoggerFactory.getLogger(ThrottlerImpl.class);
@@ -43,8 +48,10 @@ public final class ThrottlerImpl implements Throttler {
 
     private final SingleProducerSingleConsumerRingBuffer<ThrottlerToken> tokenBuffer;
 
+    private final ScheduledExecutorService scheduler;
+
     private final ThrottlerToken inToken = new ThrottlerToken();
-    private ThrottlerToken outBufferToken;
+    private final ThrottlerToken outBufferToken = new ThrottlerToken();
 
     public ThrottlerImpl(ThrottlingConfiguration config) throws RingBufferException {
         this.nbMaxEvents = config.getNbEventMax();
@@ -52,24 +59,28 @@ public final class ThrottlerImpl implements Throttler {
         this.tokenGenPeriodInMs = windowSizeInMs / nbMaxEvents;
         this.tokenBuffer = new SingleProducerSingleConsumerRingBuffer<>(
                 nbMaxEvents, ThrottlerToken::new, new ThrottlerTokenDataSetter());
+        this.scheduler = Executors.newSingleThreadScheduledExecutor();
     }
 
     public void start() {
-        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         scheduler.scheduleAtFixedRate(this::addToken, tokenGenPeriodInMs, tokenGenPeriodInMs, TimeUnit.MILLISECONDS);
     }
 
+    public void stop() {
+        scheduler.shutdownNow();
+    }
+
     private void addToken() {
-        if (!this.tokenBuffer.push(inToken)) {
-            LOG.info("notifyWhenCanProceed clients they can proceed");
-            for(ThrottlerClient listener : listeners) {
-                listener.proceedThrottledEvent();
-            }
+        this.tokenBuffer.push(inToken);
+        LOG.info("notifyWhenCanProceed clients they can proceed");
+        for ( ThrottlerClient listener : listeners) {
+            listener.proceedThrottledEvent();
         }
     }
 
     @Override
     public ThrottleResult shouldProceed() {
+        LOG.info("shouldProceed() ? nb active elems = {}", tokenBuffer.nbActiveElements());
         if (this.tokenBuffer.isEmpty()) {
             return ThrottleResult.DO_NOT_PROCEED;
         }

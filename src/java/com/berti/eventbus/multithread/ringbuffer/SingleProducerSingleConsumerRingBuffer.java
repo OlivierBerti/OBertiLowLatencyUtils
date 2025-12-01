@@ -46,7 +46,9 @@ public class SingleProducerSingleConsumerRingBuffer<T> implements RingBuffer<T> 
 
     public boolean push(T event) {
         int indexToWrite = this.claimWriteIndex();
-
+        if (indexToWrite == -1) {
+            return false;
+        }
         IndexedElement<T> indexedElement = ringBuffer.get(indexToWrite);
         dataSetter.copyData(event, indexedElement.event);
         indexedElement.index = indexToWrite;
@@ -114,5 +116,9 @@ public class SingleProducerSingleConsumerRingBuffer<T> implements RingBuffer<T> 
 
     public boolean isEmpty() {
         return lastRead >= lastWritten;
+    }
+
+    public int nbActiveElements() {
+        return lastWritten - lastRead;
     }
 }
