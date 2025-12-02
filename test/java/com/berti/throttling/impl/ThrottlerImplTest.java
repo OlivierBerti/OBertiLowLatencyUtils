@@ -17,9 +17,9 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class TestThrottlerImpl {
+public class ThrottlerImplTest {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TestThrottlerImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ThrottlerImplTest.class);
 
     private interface IntegerConsumer {
         void add(int a);

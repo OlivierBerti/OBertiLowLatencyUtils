@@ -15,7 +15,7 @@ import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 
-public class TestMultithreadedEventBus {
+public class MultithreadedEventBusTest {
 
     private static final long TEMPO_IN_NANOS = 1000;
 
