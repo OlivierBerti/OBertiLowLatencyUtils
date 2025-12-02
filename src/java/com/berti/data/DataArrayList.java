@@ -1,5 +1,7 @@
 package com.berti.data;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.function.Supplier;
@@ -43,17 +45,11 @@ public class DataArrayList<T> {
         usedSize++;
     }
 
-    public void addCopy(T[] elements) {
-        for (T element : elements) {
-            addCopy(element);
-        }
-    }
-
     private void doubleCapacity() {
         T[] newArray = (T[]) Array.newInstance(objectType, array.length * 2);
         System.arraycopy(array, 0, newArray, 0, this.usedSize);
         for (int i = this.usedSize; i < newArray.length; i++) {
-            array[i] = supplier.get();
+            newArray[i] = supplier.get();
         }
         array = newArray;
     }
@@ -82,4 +78,30 @@ public class DataArrayList<T> {
     public Stream<T> stream() {
         return Arrays.stream(array).limit(usedSize);
     }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(getRealArray());
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof DataArrayList)) {
+            return false;
+        }
+        DataArrayList<?> that = (DataArrayList<?>) obj;
+        if (!that.objectType.equals(this.objectType)) {
+            return false;
+        }
+        return Arrays.equals(this.getRealArray(), that.getRealArray());
+    }
+
+    private T[] getRealArray() {
+        return ArrayUtils.subarray(array,0, usedSize);
+    }
+
 }
