@@ -1,7 +1,6 @@
-package com.berti.eventbus;
+package com.berti.eventbus.monothread;
 
 
-//TODO get rid of this
 public interface EventConsumer<T> {
 
     // returns true if the event is not filtered by the consumer

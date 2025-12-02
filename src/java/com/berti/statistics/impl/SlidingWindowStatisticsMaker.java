@@ -17,8 +17,6 @@ import com.berti.throttling.impl.ThrottlerFactory;
 import java.time.Instant;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
@@ -33,9 +31,7 @@ public class SlidingWindowStatisticsMaker
 
     private final long windowSizeMillisec;
 
-    private final Set<StatisticsSubscriber> listeners = new CopyOnWriteArraySet<>();
-
-    private Throttler throttler;
+    private final Throttler throttler;
 
     private final List<Measurement>  measurements = new LinkedList<>();
 
@@ -156,18 +152,15 @@ public class SlidingWindowStatisticsMaker
         }
     }
 
+    // The event bus will make sure each subscriber will process the statistics in its own thread.
+    // => a subscriber won't try to process 2 statisrics in the same time.
+    // => a too slow or bugged subscriber won't block the other ones.
     private void doPushStatistics() {
         try {
             measurementPackEventBus.publishEvent(currentMeasurementPack);
         } catch (EventBusException e) {
             LOG.error("impossible to publish statistics: " + e.getMessage(), e);
         }
-        /*
-        for (StatisticsSubscriber client : listeners) {
-            if (client.accept(currentStatistics)) {
-                client.onStatistics(currentStatistics);
-            }
-        }*/
     }
 
     private void doAddMeasurement(int measurement) {

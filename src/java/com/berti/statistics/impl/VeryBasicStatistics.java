@@ -16,16 +16,6 @@ public class VeryBasicStatistics implements Statistics {
         this.sortedValues = values.stream().sorted().toList();
     }
 
-    public static long[] percentiles(long[] latencies, double... percentiles) {
-        Arrays.sort(latencies, 0, latencies.length);
-        long[] values = new long[percentiles.length];
-        for (int i = 0; i < percentiles.length; i++) {
-            int index = (int) (percentiles[i] * latencies.length);
-            values[i] = latencies[index];
-        }
-        return values;
-    }
-
     @Override
     public double getMean() {
         return mean;
