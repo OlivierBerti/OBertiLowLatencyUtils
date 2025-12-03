@@ -7,10 +7,15 @@ public class ProbabilisticRandomGenerator implements ProbabilisticRandomGen {
     private final List<NumAndProbability> possibleNumbers;
     private final SortedSet<Double> probabilitiesLadder =  new TreeSet<>();
 
-    private final Random random = new Random();
-
+    private final Random random;
 
     public ProbabilisticRandomGenerator(List<NumAndProbability> inputNumbers) {
+        this(inputNumbers, new Random());
+    }
+
+    // Useful for mocking random in TUs
+    ProbabilisticRandomGenerator(List<NumAndProbability> inputNumbers, Random random) {
+        this.random = random;
         // first removing negatives or null probabilities
         possibleNumbers = inputNumbers.stream()
                 .filter(x->x.getProbabilityOfSample() > 0)
@@ -48,5 +53,15 @@ public class ProbabilisticRandomGenerator implements ProbabilisticRandomGen {
         double randomValue = random.nextDouble();
         int index = probabilitiesLadder.headSet(randomValue).size();
         return possibleNumbers.get(index).getNumber();
+    }
+
+    // For tests only
+
+    List<NumAndProbability> getPossibleNumbers() {
+        return Collections.unmodifiableList(possibleNumbers);
+    }
+
+    SortedSet<Double> getProbabilitiesLadder() {
+        return Collections.unmodifiableSortedSet(probabilitiesLadder);
     }
 }
