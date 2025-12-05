@@ -10,8 +10,8 @@ public interface EventBus<T> {
     void publishEvent(T event) throws EventBusException;
 
     void addSubscriber(
-            Class<T> clazz, EventBusSubscriber<T> subscriber, Supplier<T> supplier) throws EventBusException;
+            Class<T> clazz, EventBusSubscriber<T> subscriber) throws EventBusException;
 
     void addSubscriberForFilteredEvents(
-            Class<T> clazz, EventBusSubscriber<T> subscriber, Supplier<T> supplier, Function<T,Boolean> filter) throws EventBusException;
+            Class<T> clazz, EventBusSubscriber<T> subscriber, Function<T,Boolean> filter) throws EventBusException;
 }

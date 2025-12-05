@@ -2,7 +2,7 @@ package com.berti.eventbus.multithread;
 
 import com.berti.data.DataSetter;
 import com.berti.eventbus.*;
-import com.berti.eventbus.multithread.ringbuffer.RingBufferException;
+import com.berti.ringbuffer.RingBufferException;
 
 import java.util.*;
 import java.util.function.Function;
@@ -11,7 +11,7 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MultiThreadedEventBus<T> extends AbstractRunnableRingBufferedModule<T> implements AdvancedEventBus<T> {
+public class MultiThreadedEventBus<T> extends AbstractRunnableRingBufferedModule<T> implements EventBus<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(MultiThreadedEventBus.class);
 
@@ -23,32 +23,22 @@ public class MultiThreadedEventBus<T> extends AbstractRunnableRingBufferedModule
 
     private volatile Map<EventBusSubscriber<T>, MultiThreadedEventBusListener<T>> listeners = new IdentityHashMap<>();
 
-    public MultiThreadedEventBus(int ringBufferLength, Supplier<T> supplier, DataSetter<T> dataSetter,
-                                 boolean multiProducer) throws RingBufferException {
-        super(new RingBufferConfiguration(ringBufferLength, TEMPO_IN_NANOS, multiProducer), supplier, dataSetter, false);
+    public MultiThreadedEventBus(Supplier<T> supplier, DataSetter<T> dataSetter,
+                                 RingBufferConfiguration ringBufferConfiguration, boolean conflation) throws RingBufferException {
+        super(ringBufferConfiguration, supplier, dataSetter, conflation);
         this.dataSetter = dataSetter;
-        this.ringBufferLength = ringBufferLength;
+        this.ringBufferLength = ringBufferConfiguration.getRingBufferSize();
     }
 
     @Override
-    public void addSubscriber(Class<T> clazz, EventBusSubscriber<T> subscriber, Supplier<T> supplier) throws EventBusException {
-        doAddSubscriber(clazz, subscriber, supplier, null, false);
+    public void addSubscriber(Class<T> clazz, EventBusSubscriber<T> subscriber) throws EventBusException {
+        doAddSubscriber(clazz, subscriber, supplier, null, conflationMode);
     }
 
     @Override
     public void addSubscriberForFilteredEvents(
-            Class<T> clazz, EventBusSubscriber<T> subscriber, Supplier<T> supplier, Function<T, Boolean> filter) throws EventBusException {
-        doAddSubscriber(clazz, subscriber, supplier, filter, false);
-    }
-
-    @Override
-    public void addSubscriberWithConflation(Class<T> clazz, EventBusSubscriber<T> subscriber, Supplier<T> supplier) throws EventBusException {
-        doAddSubscriber(clazz, subscriber, supplier, null, true);
-    }
-
-    @Override
-    public void addSubscriberForFilteredEventsWithConflation(Class<T> clazz, EventBusSubscriber<T> subscriber, Supplier<T> supplier, Function<T, Boolean> filter) throws EventBusException {
-        doAddSubscriber(clazz, subscriber, supplier, filter, true);
+            Class<T> clazz, EventBusSubscriber<T> subscriber, Function<T, Boolean> filter) throws EventBusException {
+        doAddSubscriber(clazz, subscriber, supplier, filter, conflationMode);
     }
 
     private void doAddSubscriber(

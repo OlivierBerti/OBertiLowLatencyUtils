@@ -2,7 +2,7 @@ package com.berti.eventbus.multithread;
 
 import com.berti.data.DataSetter;
 import com.berti.eventbus.EventBusSubscriber;
-import com.berti.eventbus.multithread.ringbuffer.RingBufferException;
+import com.berti.ringbuffer.RingBufferException;
 
 import java.util.function.Function;
 import java.util.function.Supplier;

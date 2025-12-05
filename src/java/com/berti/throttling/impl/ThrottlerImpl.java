@@ -1,8 +1,8 @@
 package com.berti.throttling.impl;
 
 import com.berti.data.DataSetter;
-import com.berti.eventbus.multithread.ringbuffer.RingBufferException;
-import com.berti.eventbus.multithread.ringbuffer.SingleProducerSingleConsumerRingBuffer;
+import com.berti.ringbuffer.RingBufferException;
+import com.berti.ringbuffer.SingleProducerSingleConsumerRingBuffer;
 import com.berti.throttling.Throttler;
 import com.berti.throttling.ThrottlerClient;
 import com.berti.throttling.ThrottlingConfiguration;

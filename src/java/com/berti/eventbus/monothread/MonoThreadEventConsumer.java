@@ -34,6 +34,7 @@ public class MonoThreadEventConsumer<T> implements EventConsumer<T> {
         return filter == null || filter.apply(event);
     }
 
+    //TODO; supplier?
     @Override
     public void consumeEvent(T event) {
         T eventCopy = supplier.get();

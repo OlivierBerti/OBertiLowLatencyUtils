@@ -1,7 +1,9 @@
-package com.berti.eventbus.multithread.ringbuffer;
+package com.berti.ringbuffer;
 
 import com.berti.data.SampleEvent;
 import com.berti.data.SampleEventDataSetter;
+import com.berti.ringbuffer.MultiProducerSingleConsumerRingBuffer;
+import com.berti.ringbuffer.RingBufferException;
 import org.junit.Before;
 import org.junit.Test;
 

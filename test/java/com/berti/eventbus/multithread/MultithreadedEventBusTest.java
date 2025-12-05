@@ -2,7 +2,9 @@ package com.berti.eventbus.multithread;
 
 import com.berti.data.SampleEvent;
 import com.berti.data.SampleEventDataSetter;
+import com.berti.eventbus.EventBusFactory;
 import com.berti.eventbus.EventBusSubscriber;
+import com.berti.ringbuffer.DataSetterRegistry;
 import com.berti.util.TimeUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -50,16 +52,18 @@ public class MultithreadedEventBusTest {
 
     @Before
     public void setUp() throws Exception {
+        DataSetterRegistry.register(SampleEvent.class, new SampleEventDataSetter());
         subscriber1 = new SampleEventBusSubscriber();
         subscriber2 = new SampleEventBusSubscriber();
 
         filter = x-> x.getValue()%3==0;
 
-        eventBus = new MultiThreadedEventBus<>(
-                RING_BUFFER_LENGTH, SampleEvent::new, new SampleEventDataSetter(), true);
+        RingBufferConfiguration ringbufferConfiguration = new RingBufferConfiguration(RING_BUFFER_LENGTH, TEMPO_IN_NANOS, true);
+        eventBus = (MultiThreadedEventBus<SampleEvent>) EventBusFactory.getInstance().createMultithreadedEventBus(
+                SampleEvent.class, SampleEvent::new, ringbufferConfiguration);
 
-        eventBus.addSubscriber(SampleEvent.class, subscriber1, SampleEvent::new);
-        eventBus.addSubscriberForFilteredEvents(SampleEvent.class, subscriber2, SampleEvent::new, filter);
+        eventBus.addSubscriber(SampleEvent.class, subscriber1);
+        eventBus.addSubscriberForFilteredEvents(SampleEvent.class, subscriber2, filter);
         eventBus.start();
     }
 

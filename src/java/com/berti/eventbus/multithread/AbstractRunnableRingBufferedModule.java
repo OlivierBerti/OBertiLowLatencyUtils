@@ -1,10 +1,10 @@
 package com.berti.eventbus.multithread;
 
 import com.berti.data.DataSetter;
-import com.berti.eventbus.multithread.ringbuffer.RingBuffer;
-import com.berti.eventbus.multithread.ringbuffer.RingBufferException;
-import com.berti.eventbus.multithread.ringbuffer.MultiProducerSingleConsumerRingBuffer;
-import com.berti.eventbus.multithread.ringbuffer.SingleProducerSingleConsumerRingBuffer;
+import com.berti.ringbuffer.RingBuffer;
+import com.berti.ringbuffer.RingBufferException;
+import com.berti.ringbuffer.MultiProducerSingleConsumerRingBuffer;
+import com.berti.ringbuffer.SingleProducerSingleConsumerRingBuffer;
 import com.berti.util.TimeUtils;
 
 import java.time.Duration;
@@ -109,13 +109,18 @@ public abstract class AbstractRunnableRingBufferedModule<T> {
         // to be overridden in subclasses
     }
 
+    //TODO: factorize this
     public void run() {
         while (!end) {
             try {
                 while (internalRingBuffer.poll(eventBuffer) != null) {
                     processEvent(eventBuffer);
                 }
-                TimeUtils.sleep(tempo);
+                if (tempo.isPositive()) {
+                    TimeUtils.sleep(tempo);
+                } else {
+                    Thread.yield();
+                }
             } catch (Exception e) {
                 getLogger().error("Event bus ring buffer error: " + e.getMessage(), e);
             }
@@ -128,7 +133,11 @@ public abstract class AbstractRunnableRingBufferedModule<T> {
                 while (internalRingBuffer.pollLast(eventBuffer) != null) {
                     processEvent(eventBuffer);
                 }
-                TimeUtils.sleep(tempo);
+                if (tempo.isPositive()) {
+                    TimeUtils.sleep(tempo);
+                } else {
+                    Thread.yield();
+                }
             } catch (Exception e) {
                 getLogger().error("Event bus ring buffer error: " + e.getMessage(), e);
             }

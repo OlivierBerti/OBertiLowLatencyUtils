@@ -1,76 +1,59 @@
-package com.berti.eventbus.multithread.ringbuffer;
+package com.berti.ringbuffer;
 
 import com.berti.data.DataSetter;
 
-import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+
 // This class implements a multiple producer/single consumer ring buffer
 // In a real dev I certainly would use LMAX Disruptor
-public class SingleConsumerThrottledRingBuffer<T> implements RingBuffer<T> {
+public class MultiProducerSingleConsumerRingBuffer<T> implements RingBuffer<T> {
 
-    private static final class IndexedTimestampedElement<T> {
+    private static final class IndexedElement<T> {
 
        private final T event;
 
        // a volatile variable here is enough since
        private volatile int index;
 
-       private volatile long timestamp;
-
-       public IndexedTimestampedElement(Supplier<T> supplier) {
+       public IndexedElement(Supplier<T> supplier) {
            this.event = supplier.get();
            this.index = -1;
-           this.timestamp = 0;
        }
     }
 
-    private final BaseRingBuffer<IndexedTimestampedElement<T>> ringBuffer;
+    private final BaseRingBuffer<IndexedElement<T>> ringBuffer;
 
     private final DataSetter<T> dataSetter;
 
-    private final AtomicInteger lastWritten = new AtomicInteger(0);
+    private final AtomicInteger lastWritten = new AtomicInteger(-1);
 
     //Unlike lastWritten, lastRead is  updated by a single thread
     // => a volatile int is good enough
     private volatile int lastRead = -1;
 
-    private long timeWindow;
-
-    private int nbMaxEventsInTimeWindow;
-
-    private final IndexedTimestampedElement<T> pendingElement;
 
     @SuppressWarnings("unchecked")
-    public SingleConsumerThrottledRingBuffer(
-            int length, Supplier<T> supplier, DataSetter<T> dataSetter,
-            long timeWindow, int nbMaxEventsInTimeWindow) throws RingBufferException {
-        this.timeWindow = timeWindow;
-        this.nbMaxEventsInTimeWindow = nbMaxEventsInTimeWindow;
+    public MultiProducerSingleConsumerRingBuffer(int length, Supplier<T> supplier, DataSetter<T> dataSetter) throws RingBufferException {
 
-        Supplier<IndexedTimestampedElement<T>> elementSupplier = () -> new IndexedTimestampedElement<>(supplier);
+        Supplier<IndexedElement<T>> elementSupplier = () -> new IndexedElement<>(supplier);
         this.dataSetter = dataSetter;
-        IndexedTimestampedElement<T> element = new IndexedTimestampedElement<>(supplier);
-        this.ringBuffer = new BaseRingBuffer<>(length, (Class<IndexedTimestampedElement<T>>) element.getClass(), elementSupplier);
+        IndexedElement<T> element = new IndexedElement<>(supplier);
+        this.ringBuffer = new BaseRingBuffer<>(length, (Class<IndexedElement<T>>) element.getClass(), elementSupplier);
 
-        this.pendingElement = new IndexedTimestampedElement<>(supplier);
     }
 
     public boolean push(T event) {
         int indexToWrite = this.claimWriteIndex();
 
-
         if (indexToWrite == -1) {
-            dataSetter.copyData(event, pendingElement.event);
-            pendingElement.timestamp = Instant.now().toEpochMilli();
             return false;
         }
 
-        IndexedTimestampedElement<T> indexedTimestampedElement = ringBuffer.get(indexToWrite);
-        dataSetter.copyData(event, indexedTimestampedElement.event);
-        indexedTimestampedElement.timestamp = Instant.now().toEpochMilli();
-        indexedTimestampedElement.index = indexToWrite;
+        IndexedElement<T> indexedElement = ringBuffer.get(indexToWrite);
+        dataSetter.copyData(event, indexedElement.event);
+        indexedElement.index = indexToWrite;
         return true;
     }
 
@@ -91,6 +74,7 @@ public class SingleConsumerThrottledRingBuffer<T> implements RingBuffer<T> {
         return lastWritttenIndex + 1;
     }
 
+
     public T poll(T event) {
         if (lastRead >= lastWritten.get()) {
             // no pending event
@@ -109,8 +93,8 @@ public class SingleConsumerThrottledRingBuffer<T> implements RingBuffer<T> {
     }
 
     private T getEvent(T event, int indexToRead) {
-        IndexedTimestampedElement<T> indexedTimestampedElement = ringBuffer.get(indexToRead);
-        T ringBufferEvent = readWhenAvailable(indexedTimestampedElement, indexToRead);
+        IndexedElement<T> indexedElement = ringBuffer.get(indexToRead);
+        T ringBufferEvent = readWhenAvailable(indexedElement, indexToRead);
 
         if (ringBufferEvent != null) {
             dataSetter.copyData(ringBufferEvent, event);
@@ -122,11 +106,12 @@ public class SingleConsumerThrottledRingBuffer<T> implements RingBuffer<T> {
         }
     }
 
-    private T readWhenAvailable(IndexedTimestampedElement<T> indexedTimestampedElement, int indexToRead) {
+    private T readWhenAvailable(IndexedElement<T> indexedElement, int indexToRead) {
+
         // this test ensures we are not trying to read the element before its producer finished to write it
-        while (indexedTimestampedElement.index != indexToRead) {
+        while (indexedElement.index != indexToRead) {
             Thread.yield();
         }
-        return indexedTimestampedElement.event;
+        return indexedElement.event;
     }
 }

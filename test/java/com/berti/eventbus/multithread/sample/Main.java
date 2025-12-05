@@ -2,8 +2,12 @@ package com.berti.eventbus.multithread.sample;
 
 import com.berti.data.SampleEvent;
 import com.berti.data.SampleEventDataSetter;
+import com.berti.eventbus.EventBus;
+import com.berti.eventbus.EventBusFactory;
 import com.berti.eventbus.multithread.MultiThreadedEventBus;
-import com.berti.eventbus.multithread.ringbuffer.SingleProducerSingleConsumerRingBuffer;
+import com.berti.eventbus.multithread.RingBufferConfiguration;
+import com.berti.ringbuffer.DataSetterRegistry;
+import com.berti.ringbuffer.SingleProducerSingleConsumerRingBuffer;
 import com.berti.util.TimeUtils;
 
 import org.slf4j.Logger;
@@ -14,23 +18,23 @@ public class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(SingleProducerSingleConsumerRingBuffer.class);
 
     public static void main(String[] args) {
-        MultiThreadedEventBus<SampleEvent> eventBus = null;
+        EventBus<SampleEvent> eventBus = null;
         SampleEventProducer producer1 = null;
         SampleEventProducer producer2 = null;
         SampleEventProducer producer3 = null;
         try {
-
-            eventBus = new MultiThreadedEventBus<>(
-                    500,  SampleEvent::new, new SampleEventDataSetter(), true);
-            eventBus.start();
+            DataSetterRegistry.register(SampleEvent.class, new SampleEventDataSetter());
+            RingBufferConfiguration ringBufferConfiguration = new RingBufferConfiguration(500, 1000, true);
+            eventBus = EventBusFactory.getInstance().createMultithreadedEventBus(
+                    SampleEvent.class, SampleEvent::new, ringBufferConfiguration);
 
             SampleEventBusSubscriber subscriber1 = new SampleEventBusSubscriber("X");
             SampleEventBusSubscriber subscriber2 = new SampleEventBusSubscriber("Y");
             SampleEventBusSubscriber subscriber3 = new SampleEventBusSubscriber("Z");
 
-            eventBus.addSubscriber(SampleEvent.class, subscriber1, SampleEvent::new);
-            eventBus.addSubscriberForFilteredEvents(SampleEvent.class, subscriber2, SampleEvent::new, event->event.getValue()%7==0);
-            eventBus.addSubscriberForFilteredEvents(SampleEvent.class, subscriber3, SampleEvent::new, event->event.getValue()%3==0);
+            eventBus.addSubscriber(SampleEvent.class, subscriber1);
+            eventBus.addSubscriberForFilteredEvents(SampleEvent.class, subscriber2, event->event.getValue()%7==0);
+            eventBus.addSubscriberForFilteredEvents(SampleEvent.class, subscriber3, event->event.getValue()%3==0);
 
             producer1 = new SampleEventProducer("A", eventBus, 200, 1001, 20000);
             producer2 = new SampleEventProducer("B", eventBus, 200, 2001,20000);
@@ -57,7 +61,7 @@ public class Main {
                 producer3.stop();
             }
             if ( eventBus != null ) {
-                eventBus.stop();
+                ((MultiThreadedEventBus<SampleEvent>) eventBus).stop();
             }
         }
         System.exit(0);

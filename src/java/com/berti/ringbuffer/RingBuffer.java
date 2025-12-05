@@ -1,4 +1,4 @@
-package com.berti.eventbus.multithread.ringbuffer;
+package com.berti.ringbuffer;
 
 
 public interface RingBuffer<T> {

@@ -1,4 +1,4 @@
-package com.berti.eventbus.multithread.ringbuffer;
+package com.berti.ringbuffer;
 
 import com.berti.data.DataSetter;
 
@@ -41,7 +41,6 @@ public class SingleProducerSingleConsumerRingBuffer<T> implements RingBuffer<T> 
         this.dataSetter = dataSetter;
         IndexedElement<T> element = new IndexedElement<>(supplier);
         this.ringBuffer = new BaseRingBuffer<>(length, (Class<IndexedElement<T>>) element.getClass(), elementSupplier);
-
     }
 
     public boolean push(T event) {
@@ -108,8 +107,7 @@ public class SingleProducerSingleConsumerRingBuffer<T> implements RingBuffer<T> 
         return isElementReadable(result) ? result :null;
     }
 
-    // By redefining this method, we can tmporarily block the reading (see WinowedQueue)
-    // Just be sure the condition can't remain false forever
+    // TODO review that
     protected boolean isElementReadable(T result) {
         return true;
     }

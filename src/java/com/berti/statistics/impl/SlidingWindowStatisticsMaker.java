@@ -41,7 +41,6 @@ public class SlidingWindowStatisticsMaker
 
     private final EventBus<MeasurementPack> measurementPackEventBus;
 
-    private final Supplier<MeasurementPack> measurementPackSupplier;
 
     public SlidingWindowStatisticsMaker(
             long windowSizeMillisec,
@@ -56,7 +55,6 @@ public class SlidingWindowStatisticsMaker
         this.throttler = ThrottlerFactory.getInstance().createThrottler(throttlingConfiguration);
         this.throttler.notifyWhenCanProceed(this);
         this.measurementPackEventBus = measurementPackEventBus;
-        this.measurementPackSupplier = measurementPackSupplier;
         this.currentMeasurementPack =  measurementPackSupplier.get();
     }
 
@@ -76,8 +74,7 @@ public class SlidingWindowStatisticsMaker
         try {
             this.measurementPackEventBus.addSubscriber(
                     MeasurementPack.class,
-                    new MeasurementPackSubscriberBridge(statisticsSubscriber),
-                    measurementPackSupplier);
+                    new MeasurementPackSubscriberBridge(statisticsSubscriber));
         } catch (Exception e) {
             LOG.error("Impossible to add statistics subscriber: "+e.getMessage(), e);
         }

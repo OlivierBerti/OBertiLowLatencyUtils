@@ -1,4 +1,4 @@
-package com.berti.eventbus.multithread.ringbuffer;
+package com.berti.ringbuffer;
 
 public class RingBufferException extends Exception {
     public RingBufferException(String message) {
