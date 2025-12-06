@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+// To each class used in the RingBuffer a DataSetter must be associated
 public final class DataSetterRegistry {
 
     private static final Map<Class<?>, DataSetter> dataSetters = new HashMap<>();

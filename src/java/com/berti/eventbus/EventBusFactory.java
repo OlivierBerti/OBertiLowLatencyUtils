@@ -5,10 +5,14 @@ import com.berti.eventbus.monothread.SimpleEventBus;
 import com.berti.eventbus.multithread.MultiThreadedEventBus;
 import com.berti.eventbus.multithread.RingBufferConfiguration;
 import com.berti.ringbuffer.DataSetterRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.function.Supplier;
 
 public final class EventBusFactory {
+
+    private static final Logger LOG = LoggerFactory.getLogger(EventBusFactory.class);
 
     private static final EventBusFactory instance = new EventBusFactory() ;
 
@@ -30,10 +34,14 @@ public final class EventBusFactory {
     }
 
     private <T> EventBus<T> createRingBufferedBus(Class<T> clazz, Supplier<T> supplier, RingBufferConfiguration config, boolean conflating) throws EventBusException {
+ //TODO: other cases?
+        if (config == null) {
+            String msg = "Trying to create a ring buffered event bus with null ring buffer configuration";
+            LOG.error("Impossible to create event bus for {}: {}", clazz.getName(), msg);
+            throw new EventBusException(msg);
+        }
         try {
-            // TODO config == null?
-            DataSetter<T> dataSetter = DataSetterRegistry.getDataSetter(clazz);
-            MultiThreadedEventBus<T> eventBus = new MultiThreadedEventBus<>(supplier, dataSetter, config, conflating);
+            MultiThreadedEventBus<T> eventBus = new MultiThreadedEventBus<>(clazz, supplier, config, conflating);
             eventBus.start();
             return eventBus;
         } catch (Exception e) {

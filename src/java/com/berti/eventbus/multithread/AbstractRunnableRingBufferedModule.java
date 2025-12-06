@@ -1,10 +1,7 @@
 package com.berti.eventbus.multithread;
 
 import com.berti.data.DataSetter;
-import com.berti.ringbuffer.RingBuffer;
-import com.berti.ringbuffer.RingBufferException;
-import com.berti.ringbuffer.MultiProducerSingleConsumerRingBuffer;
-import com.berti.ringbuffer.SingleProducerSingleConsumerRingBuffer;
+import com.berti.ringbuffer.*;
 import com.berti.util.TimeUtils;
 
 import java.time.Duration;
@@ -26,31 +23,34 @@ import org.slf4j.Logger;
 public abstract class AbstractRunnableRingBufferedModule<T> {
 
     private final RingBuffer<T> internalRingBuffer;
-
-    private final Executor executor;
-
-    protected final Supplier<T> supplier;
-
-    protected final DataSetter<T> dataSetter;
-
-    private volatile boolean end = false;
-
     private final T eventBuffer;
 
-    private final Duration tempo;
+    private final Executor executor;
+    private volatile boolean end = false;
+
+    protected final Supplier<T> supplier;
+    protected final DataSetter<T> dataSetter;
+
+    protected final Duration tempo;
 
     protected Function<T, Boolean> filter = null;
-
-    protected boolean conflationMode = false;
+    protected boolean conflationMode;
 
     private final AtomicBoolean ringBufferFull = new AtomicBoolean(false);
 
 
     protected AbstractRunnableRingBufferedModule(
-            RingBufferConfiguration ringBufferConfiguration,
-            Supplier<T> supplier, DataSetter<T> dataSetter, boolean conflationMode) throws RingBufferException {
+            Class<T> clazz, RingBufferConfiguration ringBufferConfiguration,
+            Supplier<T> supplier, boolean conflationMode) throws RingBufferException {
+        if (ringBufferConfiguration == null) {
+            throw new RingBufferException("Trying to create a ring buffer with null configuration");
+        }
+        try {
+            this.dataSetter = DataSetterRegistry.getDataSetter(clazz);
+        } catch (Exception e) {
+            throw new RingBufferException("Impossible to retrieve the dataSetter: " + e.getMessage(), e);
+        }
         this.supplier = supplier;
-        this.dataSetter = dataSetter;
         this.conflationMode = conflationMode;
         this.eventBuffer = supplier.get();
         int ringBufferSize = ringBufferConfiguration.getRingBufferSize();
@@ -148,6 +148,7 @@ public abstract class AbstractRunnableRingBufferedModule<T> {
         return ringBufferFull.get();
     }
 
+    //TODO rework this
     protected abstract void onRingBufferFull(T event) throws Exception;
 
     protected abstract void processEvent(T eventBuffer) throws Exception;

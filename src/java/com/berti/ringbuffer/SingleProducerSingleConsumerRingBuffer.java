@@ -24,8 +24,6 @@ public class SingleProducerSingleConsumerRingBuffer<T> implements RingBuffer<T> 
 
     protected final BaseRingBuffer<IndexedElement<T>> ringBuffer;
 
-    protected final Supplier<T> supplier;
-
     protected final DataSetter<T> dataSetter;
 
     private volatile int lastWritten = -1;
@@ -37,7 +35,6 @@ public class SingleProducerSingleConsumerRingBuffer<T> implements RingBuffer<T> 
     public SingleProducerSingleConsumerRingBuffer(int length, Supplier<T> supplier, DataSetter<T> dataSetter) throws RingBufferException {
 
         Supplier<IndexedElement<T>> elementSupplier = () -> new IndexedElement<>(supplier);
-        this.supplier = supplier;
         this.dataSetter = dataSetter;
         IndexedElement<T> element = new IndexedElement<>(supplier);
         this.ringBuffer = new BaseRingBuffer<>(length, (Class<IndexedElement<T>>) element.getClass(), elementSupplier);

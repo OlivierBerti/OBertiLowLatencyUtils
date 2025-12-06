@@ -2,12 +2,10 @@ package com.berti.eventbus.multithread.sample;
 
 import com.berti.data.SampleEvent;
 import com.berti.eventbus.EventBus;
-import com.berti.eventbus.multithread.MultiThreadedEventBusListener;
 import com.berti.util.TimeUtils;
 
 import java.time.Instant;
 
-import lombok.extern.java.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

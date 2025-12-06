@@ -19,14 +19,12 @@ public class MultiThreadedEventBus<T> extends AbstractRunnableRingBufferedModule
 
     private final int ringBufferLength;
 
-    private final DataSetter<T> dataSetter;
 
     private volatile Map<EventBusSubscriber<T>, MultiThreadedEventBusListener<T>> listeners = new IdentityHashMap<>();
 
-    public MultiThreadedEventBus(Supplier<T> supplier, DataSetter<T> dataSetter,
+    public MultiThreadedEventBus(Class<T> clazz, Supplier<T> supplier,
                                  RingBufferConfiguration ringBufferConfiguration, boolean conflation) throws RingBufferException {
-        super(ringBufferConfiguration, supplier, dataSetter, conflation);
-        this.dataSetter = dataSetter;
+        super(clazz, ringBufferConfiguration, supplier, conflation);
         this.ringBufferLength = ringBufferConfiguration.getRingBufferSize();
     }
 
@@ -55,8 +53,8 @@ public class MultiThreadedEventBus<T> extends AbstractRunnableRingBufferedModule
         newListeners.putAll(this.listeners);
 
         try {
-            MultiThreadedEventBusListener<T> listener = new MultiThreadedEventBusListener<>(
-                    this.ringBufferLength, subscriber, supplier, dataSetter, filter, conflationMode);
+            MultiThreadedEventBusListener<T> listener = new MultiThreadedEventBusListener<> (
+                    clazz, subscriber, filter, ringBufferLength, tempo.toNanos(), supplier, conflationMode);
             listener.start();
             newListeners.put(subscriber, listener);
             listeners = newListeners;

@@ -41,7 +41,6 @@ public class MultiProducerSingleConsumerRingBuffer<T> implements RingBuffer<T> {
         this.dataSetter = dataSetter;
         IndexedElement<T> element = new IndexedElement<>(supplier);
         this.ringBuffer = new BaseRingBuffer<>(length, (Class<IndexedElement<T>>) element.getClass(), elementSupplier);
-
     }
 
     public boolean push(T event) {
