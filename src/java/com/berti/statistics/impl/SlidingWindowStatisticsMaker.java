@@ -11,14 +11,13 @@ import com.berti.statistics.StatisticsSubscriber;
 import com.berti.statistics.data.*;
 import com.berti.throttling.Throttler;
 import com.berti.throttling.ThrottlerClient;
-import com.berti.throttling.ThrottlingConfiguration;
-import com.berti.throttling.impl.ThrottlerFactory;
 
-import java.time.Instant;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+
+import com.berti.util.GlobalTimeProvider;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,18 +40,19 @@ public class SlidingWindowStatisticsMaker
 
     private final EventBus<MeasurementPack> measurementPackEventBus;
 
+   // private int currentOnMesuementPackonLastPush = 0;
 
     public SlidingWindowStatisticsMaker(
             long windowSizeMillisec,
-            ThrottlingConfiguration throttlingConfiguration,
+            Throttler throttler,
             RingBufferConfiguration ringBufferConfiguration,
             EventBus<MeasurementPack> measurementPackEventBus,
             Supplier<MeasurementPack> measurementPackSupplier) throws Exception {
-        super(ringBufferConfiguration, SlidingWindowStatisticsEvent::new,
-                new SlidingWindowStatisticsEventDataSetter(), false);
+        super(SlidingWindowStatisticsEvent.class, ringBufferConfiguration,
+                SlidingWindowStatisticsEvent::new,false);
 
         this.windowSizeMillisec = windowSizeMillisec;
-        this.throttler = ThrottlerFactory.getInstance().createThrottler(throttlingConfiguration);
+        this.throttler = throttler;
         this.throttler.notifyWhenCanProceed(this);
         this.measurementPackEventBus = measurementPackEventBus;
         this.currentMeasurementPack =  measurementPackSupplier.get();
@@ -129,8 +129,12 @@ public class SlidingWindowStatisticsMaker
     // => There will be no concurency issue in the measurements list
     // =>
     private void doCalculateCurrentStatistics() {
-        doCleanOldMeasurements();
         currentMeasurementPack.clear();
+        doCleanOldMeasurements();
+        if (measurements.isEmpty()) {
+            return;
+        }
+
         for (Measurement measurement: measurements) {
             currentMeasurementPack.addMeasurement(measurement);
         }
@@ -138,7 +142,7 @@ public class SlidingWindowStatisticsMaker
     }
 
     private void doCleanOldMeasurements() {
-        long now = Instant.now().toEpochMilli();
+        long now = GlobalTimeProvider.getGlobalTime().getTimeMs();
         while (!measurements.isEmpty()) {
             Measurement measurement = measurements.getFirst();
             if (now - measurement.getTimestamsp() > this.windowSizeMillisec) {
@@ -150,18 +154,20 @@ public class SlidingWindowStatisticsMaker
     }
 
     // The event bus will make sure each subscriber will process the statistics in its own thread.
-    // => a subscriber won't try to process 2 statisrics in the same time.
+    // => a subscriber won't try to process 2 statistics in the same time.
     // => a too slow or bugged subscriber won't block the other ones.
     private void doPushStatistics() {
         try {
-            measurementPackEventBus.publishEvent(currentMeasurementPack);
+            if (!currentMeasurementPack.isEmpty()) {
+                measurementPackEventBus.publishEvent(currentMeasurementPack);
+            }
         } catch (EventBusException e) {
             LOG.error("impossible to publish statistics: " + e.getMessage(), e);
         }
     }
 
     private void doAddMeasurement(int measurement) {
-        measurements.add(new Measurement(measurement, Instant.now().toEpochMilli()));
+        measurements.add(new Measurement(measurement, GlobalTimeProvider.getGlobalTime().getTimeMs()));
     }
 
     @Override

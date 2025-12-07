@@ -1,10 +1,11 @@
 package com.berti.statistics.impl;
 
 import com.berti.statistics.Statistics;
+import lombok.EqualsAndHashCode;
 
-import java.util.Arrays;
 import java.util.List;
 
+@EqualsAndHashCode
 public class VeryBasicStatistics implements Statistics {
 
     private final double mean;
@@ -21,6 +22,7 @@ public class VeryBasicStatistics implements Statistics {
         return mean;
     }
 
+    //TODO
     @Override
     public double getMode() {
         throw new UnsupportedOperationException("Not supported yet.");

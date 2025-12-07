@@ -3,8 +3,7 @@ package com.berti.eventbus.multithread.sample;
 import com.berti.data.SampleEvent;
 import com.berti.eventbus.EventBusSubscriber;
 
-import java.time.Instant;
-
+import com.berti.util.GlobalTimeProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +21,7 @@ public class SampleEventBusSubscriber implements EventBusSubscriber<SampleEvent>
 
     @Override
     public void onEvent(SampleEvent event) {
-        event.setReceptionTime(Instant.now().toEpochMilli());
+        event.setReceptionTime(GlobalTimeProvider.getGlobalTime().getTimeMs());
 
         logger.info( "{} received event {}{} value = {} duration = {} ms",
             name, event.getProducerId(), event.getEventNumber(), event.getValue(), event.getLatency());

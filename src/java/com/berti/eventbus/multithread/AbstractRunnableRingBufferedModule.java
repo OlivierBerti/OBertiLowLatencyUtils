@@ -100,7 +100,7 @@ public abstract class AbstractRunnableRingBufferedModule<T> {
         }
     }
 
-    public void stop() {
+    public final void stop() {
         end = true;
         onStop();
     }

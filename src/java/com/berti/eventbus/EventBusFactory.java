@@ -34,7 +34,6 @@ public final class EventBusFactory {
     }
 
     private <T> EventBus<T> createRingBufferedBus(Class<T> clazz, Supplier<T> supplier, RingBufferConfiguration config, boolean conflating) throws EventBusException {
- //TODO: other cases?
         if (config == null) {
             String msg = "Trying to create a ring buffered event bus with null ring buffer configuration";
             LOG.error("Impossible to create event bus for {}: {}", clazz.getName(), msg);
