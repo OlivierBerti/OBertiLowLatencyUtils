@@ -14,7 +14,8 @@ public class MultiProducerSingleConsumerRingBuffer<T> implements RingBuffer<T> {
 
        private final T event;
 
-       // a volatile variable here is enough since
+       // even in multi producer a volatile variable here is enough
+       // because the claimWriteIndex method will prevent two threads from updating it at the same time
        private volatile int index;
 
        public IndexedElement(Supplier<T> supplier) {
@@ -27,10 +28,10 @@ public class MultiProducerSingleConsumerRingBuffer<T> implements RingBuffer<T> {
 
     private final DataSetter<T> dataSetter;
 
+    // Two publisher may want to update lastWritten at the same time
+    // => a volatile int is not good enough
     private final AtomicInteger lastWritten = new AtomicInteger(-1);
 
-    //Unlike lastWritten, lastRead is  updated by a single thread
-    // => a volatile int is good enough
     private volatile int lastRead = -1;
 
 
@@ -52,6 +53,8 @@ public class MultiProducerSingleConsumerRingBuffer<T> implements RingBuffer<T> {
 
         IndexedElement<T> indexedElement = ringBuffer.get(indexToWrite);
         dataSetter.copyData(event, indexedElement.event);
+
+        // The index must be updated last ecause the consumer will use it to know the event is ready
         indexedElement.index = indexToWrite;
         return true;
     }

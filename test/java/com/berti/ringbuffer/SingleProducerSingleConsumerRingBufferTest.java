@@ -55,7 +55,6 @@ public class SingleProducerSingleConsumerRingBufferTest {
         SampleEvent event2 = createSampleEvent(2, 1);
         SampleEvent event3 = createSampleEvent(3, 4);
 
-
         ringBuffer.push(event1);
         ringBuffer.push(event2);
         ringBuffer.push(event3);

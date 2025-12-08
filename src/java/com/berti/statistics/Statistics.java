@@ -1,9 +1,11 @@
 package com.berti.statistics;
 
+import java.util.List;
+
 public interface Statistics {
     double getMean();
 
-    double getMode();
+    List<Integer> getMode();
 
-    double getPctile(int pctile);
+    int getPercentile(int pctile);
 }

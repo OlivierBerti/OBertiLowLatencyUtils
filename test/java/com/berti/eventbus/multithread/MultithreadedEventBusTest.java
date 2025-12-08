@@ -2,6 +2,7 @@ package com.berti.eventbus.multithread;
 
 import com.berti.data.SampleEvent;
 import com.berti.data.SampleEventDataSetter;
+import com.berti.eventbus.EventBusException;
 import com.berti.eventbus.EventBusFactory;
 import com.berti.eventbus.EventBusSubscriber;
 import com.berti.ringbuffer.DataSetterRegistry;
@@ -21,12 +22,14 @@ public class MultithreadedEventBusTest {
 
     private static final long TEMPO_IN_NANOS = 1000;
 
+    private static final long BIG_TEMPO_IN_NANOS = 100_000_000L;
+
     private static final int RING_BUFFER_LENGTH = 1024;
 
 
     private static final class SampleEventBusSubscriber implements EventBusSubscriber<SampleEvent> {
 
-        private final List<SampleEvent> events = new ArrayList<SampleEvent>();
+        private final List<SampleEvent> events = new ArrayList<>();
 
         @Override
         public void onEvent(SampleEvent event) {
@@ -57,14 +60,6 @@ public class MultithreadedEventBusTest {
         subscriber2 = new SampleEventBusSubscriber();
 
         filter = x-> x.getValue()%3==0;
-
-        RingBufferConfiguration ringbufferConfiguration = new RingBufferConfiguration(RING_BUFFER_LENGTH, TEMPO_IN_NANOS, true);
-        eventBus = (MultiThreadedEventBus<SampleEvent>) EventBusFactory.getInstance().createMultithreadedEventBus(
-                SampleEvent.class, SampleEvent::new, ringbufferConfiguration);
-
-        eventBus.addSubscriber(SampleEvent.class, subscriber1);
-        eventBus.addSubscriberForFilteredEvents(SampleEvent.class, subscriber2, filter);
-        eventBus.start();
     }
 
     @After
@@ -73,7 +68,10 @@ public class MultithreadedEventBusTest {
     }
 
     @Test
-    public void testEventBus() {
+    public void testEventBusMonoProducer() throws EventBusException {
+
+        eventBus = createEventBus(false, false);
+
         SampleEvent event1 = createSampleEvent(1, 3);
         SampleEvent event2 = createSampleEvent(2, 1);
         SampleEvent event3 = createSampleEvent(3, 4);
@@ -96,6 +94,115 @@ public class MultithreadedEventBusTest {
 
         assertEquals(3, subscriber2.getEvent(0).getValue());
         assertEquals(21, subscriber2.getEvent(1).getValue());
+    }
+
+    @Test
+    public void testEventBusMultiProducer() throws EventBusException {
+
+        eventBus = createEventBus(true, false);
+
+        SampleEvent event1 = createSampleEvent(1, 3);
+        SampleEvent event2 = createSampleEvent(2, 1);
+        SampleEvent event3 = createSampleEvent(3, 4);
+        SampleEvent event4 = createSampleEvent(4, 21);
+
+        eventBus.publishEvent(event1);
+        eventBus.publishEvent(event2);
+        eventBus.publishEvent(event3);
+        eventBus.publishEvent(event4);
+
+        TimeUtils.sleepMillis(1000);
+
+        assertEquals(4, subscriber1.nbEvents());
+        assertEquals(2, subscriber2.nbEvents());
+
+        assertEquals(3, subscriber1.getEvent(0).getValue());
+        assertEquals(1, subscriber1.getEvent(1).getValue());
+        assertEquals(4, subscriber1.getEvent(2).getValue());
+        assertEquals(21, subscriber1.getEvent(3).getValue());
+
+        assertEquals(3, subscriber2.getEvent(0).getValue());
+        assertEquals(21, subscriber2.getEvent(1).getValue());
+    }
+
+    @Test
+    public void testConflatingEventBusMonoProducer() throws Exception {
+
+        eventBus = createEventBus(false, true);
+
+        SampleEvent event1 = createSampleEvent(1, 3);
+        SampleEvent event2 = createSampleEvent(2, 1);
+        SampleEvent event3 = createSampleEvent(4, 21);
+        SampleEvent event4 = createSampleEvent(3, 4);
+
+        eventBus.publishEvent(event1);
+        Thread.sleep(1000);
+
+        eventBus.publishEvent(event2);
+        eventBus.publishEvent(event3);
+        eventBus.publishEvent(event4);
+
+        TimeUtils.sleepMillis(1000);
+
+        assertEquals(2, subscriber1.nbEvents());
+        assertEquals(2, subscriber2.nbEvents());
+
+        assertEquals(3, subscriber1.getEvent(0).getValue());
+        assertEquals(4, subscriber1.getEvent(1).getValue());
+
+        assertEquals(3, subscriber2.getEvent(0).getValue());
+        assertEquals(21, subscriber2.getEvent(1).getValue());
+    }
+
+    @Test
+    public void testConflatingEventBusMultiProducer() throws Exception {
+
+        eventBus = createEventBus(true, true);
+
+        SampleEvent event1 = createSampleEvent(1, 3);
+        SampleEvent event2 = createSampleEvent(2, 1);
+        SampleEvent event3 = createSampleEvent(4, 21);
+        SampleEvent event4 = createSampleEvent(3, 4);
+
+        eventBus.publishEvent(event1);
+        Thread.sleep(1000);
+
+        eventBus.publishEvent(event2);
+        eventBus.publishEvent(event3);
+        eventBus.publishEvent(event4);
+
+        TimeUtils.sleepMillis(1000);
+
+        assertEquals(2, subscriber1.nbEvents());
+        assertEquals(2, subscriber2.nbEvents());
+
+        assertEquals(3, subscriber1.getEvent(0).getValue());
+        assertEquals(4, subscriber1.getEvent(1).getValue());
+
+        assertEquals(3, subscriber2.getEvent(0).getValue());
+        assertEquals(21, subscriber2.getEvent(1).getValue());
+    }
+
+
+    private MultiThreadedEventBus<SampleEvent> createEventBus(boolean multiProducer, boolean conflation) throws EventBusException {
+
+        // When testing conflation, we use big tempos to give time to several event to come
+        long tempoInNanos = conflation ?BIG_TEMPO_IN_NANOS :TEMPO_IN_NANOS;
+
+        RingBufferConfiguration ringbufferConfiguration =
+                new RingBufferConfiguration(RING_BUFFER_LENGTH, tempoInNanos, multiProducer);
+        if (conflation) {
+            eventBus = (MultiThreadedEventBus<SampleEvent>) EventBusFactory.getInstance().createConflatingMultithreadedEventBus(
+                    SampleEvent.class, SampleEvent::new, ringbufferConfiguration);
+        } else {
+            eventBus = (MultiThreadedEventBus<SampleEvent>) EventBusFactory.getInstance().createMultithreadedEventBus(
+                    SampleEvent.class, SampleEvent::new, ringbufferConfiguration);
+        }
+
+        eventBus.addSubscriber(SampleEvent.class, subscriber1);
+        eventBus.addSubscriberForFilteredEvents(SampleEvent.class, subscriber2, filter);
+        eventBus.start();
+        return eventBus;
     }
 
     private SampleEvent createSampleEvent(int numEvent, int value) {

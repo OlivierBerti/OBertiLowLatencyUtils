@@ -10,14 +10,13 @@ import java.util.function.Supplier;
 // On monothread architecture, the event bus is just an Observer pattern with two extra features:
 // - filtering the events
 // - making copies of events for each subscriber (unnecessary if the event is immutable)
-// TODO: immutable event consumer
 public class MonoThreadEventConsumer<T> implements EventConsumer<T> {
 
     private final EventBusSubscriber<T> subscriber;
 
     private final Function<T, Boolean> filter;
 
-    private final T eventBuffer;
+    private final Supplier<T> supplier;
 
     private final DataSetter<T> dataSetter;
 
@@ -25,7 +24,7 @@ public class MonoThreadEventConsumer<T> implements EventConsumer<T> {
                                    Supplier<T> supplier, DataSetter<T> dataSetter, Function<T, Boolean> filter) throws EventBusException {
         this.subscriber = subscriber;
         this.filter = filter;
-        this.eventBuffer = supplier.get();
+        this.supplier = supplier;
         this.dataSetter = dataSetter;
         if (this.dataSetter == null) {
             throw new EventBusException("No DataSetter registered for " + clazz);
@@ -39,7 +38,8 @@ public class MonoThreadEventConsumer<T> implements EventConsumer<T> {
 
     @Override
     public void consumeEvent(T event) {
-        dataSetter.copyData(event, eventBuffer);
-        subscriber.onEvent(eventBuffer);
+        T outputEvent = supplier.get();
+        dataSetter.copyData(event, outputEvent);
+        subscriber.onEvent(outputEvent);
     }
 }

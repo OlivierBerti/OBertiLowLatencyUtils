@@ -4,10 +4,7 @@ import com.berti.eventbus.EventBus;
 import com.berti.eventbus.EventBusException;
 import com.berti.eventbus.multithread.AbstractRunnableRingBufferedModule;
 import com.berti.eventbus.multithread.RingBufferConfiguration;
-import com.berti.statistics.SlidingWindowStatistics;
-import com.berti.statistics.SlidingWindowStatisticsException;
-import com.berti.statistics.Statistics;
-import com.berti.statistics.StatisticsSubscriber;
+import com.berti.statistics.*;
 import com.berti.statistics.data.*;
 import com.berti.throttling.Throttler;
 import com.berti.throttling.ThrottlerClient;
@@ -40,11 +37,15 @@ public class SlidingWindowStatisticsMaker
 
     private final EventBus<MeasurementPack> measurementPackEventBus;
 
-   // private int currentOnMesuementPackonLastPush = 0;
+    private final StatisticsCalculator statisticsCalculator;
+
+    //To avoid pushing the same measurement pack twice
+    private boolean measurementPackChangedSinceLastPush = false;
 
     public SlidingWindowStatisticsMaker(
             long windowSizeMillisec,
             Throttler throttler,
+            StatisticsCalculator statisticsCalculator,
             RingBufferConfiguration ringBufferConfiguration,
             EventBus<MeasurementPack> measurementPackEventBus,
             Supplier<MeasurementPack> measurementPackSupplier) throws Exception {
@@ -53,6 +54,7 @@ public class SlidingWindowStatisticsMaker
 
         this.windowSizeMillisec = windowSizeMillisec;
         this.throttler = throttler;
+        this.statisticsCalculator = statisticsCalculator;
         this.throttler.notifyWhenCanProceed(this);
         this.measurementPackEventBus = measurementPackEventBus;
         this.currentMeasurementPack =  measurementPackSupplier.get();
@@ -74,7 +76,7 @@ public class SlidingWindowStatisticsMaker
         try {
             this.measurementPackEventBus.addSubscriber(
                     MeasurementPack.class,
-                    new MeasurementPackSubscriberBridge(statisticsSubscriber));
+                    new MeasurementPackSubscriberBridge(statisticsSubscriber, statisticsCalculator));
         } catch (Exception e) {
             LOG.error("Impossible to add statistics subscriber: "+e.getMessage(), e);
         }
@@ -99,7 +101,7 @@ public class SlidingWindowStatisticsMaker
                         && !isRingBufferFull()) {
                     Thread.yield();
                 }
-                return StatisticsCalculator.createStatistics(
+                return statisticsCalculator.createStatistics(
                         this.currentMeasurementPack.measurementsStream());
             } catch (Exception e) {
                 LOG.warn("impossible to get last statistics: {}", e.getMessage());
@@ -126,8 +128,13 @@ public class SlidingWindowStatisticsMaker
 
     // Note: All the methods with a name starting with "do" are private
     // and called only in the event processing trade
-    // => There will be no concurency issue in the measurements list
-    // =>
+    // => There will be no concurency issue in the measurements list updates
+
+    private void doAddMeasurement(int measurement) {
+        measurements.add(new Measurement(measurement, GlobalTimeProvider.getGlobalTime().getTimeMs()));
+        measurementPackChangedSinceLastPush = true;
+    }
+
     private void doCalculateCurrentStatistics() {
         currentMeasurementPack.clear();
         doCleanOldMeasurements();
@@ -147,6 +154,7 @@ public class SlidingWindowStatisticsMaker
             Measurement measurement = measurements.getFirst();
             if (now - measurement.getTimestamsp() > this.windowSizeMillisec) {
                 measurements.removeFirst();
+                measurementPackChangedSinceLastPush = true;
             } else  {
                 break;
             }
@@ -158,16 +166,13 @@ public class SlidingWindowStatisticsMaker
     // => a too slow or bugged subscriber won't block the other ones.
     private void doPushStatistics() {
         try {
-            if (!currentMeasurementPack.isEmpty()) {
+            if (!currentMeasurementPack.isEmpty() && measurementPackChangedSinceLastPush) {
                 measurementPackEventBus.publishEvent(currentMeasurementPack);
+                measurementPackChangedSinceLastPush = false;
             }
         } catch (EventBusException e) {
             LOG.error("impossible to publish statistics: " + e.getMessage(), e);
         }
-    }
-
-    private void doAddMeasurement(int measurement) {
-        measurements.add(new Measurement(measurement, GlobalTimeProvider.getGlobalTime().getTimeMs()));
     }
 
     @Override

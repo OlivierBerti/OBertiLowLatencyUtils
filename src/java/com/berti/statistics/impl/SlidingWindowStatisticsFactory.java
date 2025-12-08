@@ -6,6 +6,7 @@ import com.berti.eventbus.EventBusFactory;
 import com.berti.eventbus.multithread.RingBufferConfiguration;
 import com.berti.statistics.SlidingWindowStatistics;
 import com.berti.statistics.SlidingWindowStatisticsException;
+import com.berti.statistics.StatisticsCalculator;
 import com.berti.statistics.data.MeasurementPack;
 import com.berti.throttling.Throttler;
 import com.berti.throttling.ThrottlingConfiguration;
@@ -35,9 +36,11 @@ public final class SlidingWindowStatisticsFactory {
             EventBus<MeasurementPack> measurementPackEventBus = createMeasurementPackEventBus();
             Supplier<MeasurementPack> supplier =  ()-> new MeasurementPack(MEASUREMENT_PACK_INITIAL_CAPACITY);
 
+            StatisticsCalculator statisticsCalculator = new StatisticsCalculatorImpl();
             Throttler throttler = ThrottlerFactory.getInstance().createThrottler(throttlingConfiguration);
+
             SlidingWindowStatisticsMaker impl = new SlidingWindowStatisticsMaker(
-                windowSizeMillisec, throttler, ringBufferConfiguration, measurementPackEventBus, supplier);
+                windowSizeMillisec, throttler, statisticsCalculator,  ringBufferConfiguration, measurementPackEventBus, supplier);
 
             impl.start();
             return impl;

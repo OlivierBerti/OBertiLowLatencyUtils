@@ -7,6 +7,7 @@ import com.berti.ringbuffer.RingBufferException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,12 +20,18 @@ class MultiThreadedEventBusListener<T> extends AbstractRunnableRingBufferedModul
 
     private final EventBusSubscriber<T> subscriber;
 
+    private final Function<T, Boolean> filter;
+
     public MultiThreadedEventBusListener(
             Class<T> clazz, EventBusSubscriber<T> eventBusSubscriber, Function<T, Boolean> filter,
             int ringBufferSize, long tempoInNanos, Supplier<T> supplier,  boolean conflationMode) throws RingBufferException {
         super(clazz, new RingBufferConfiguration(ringBufferSize, tempoInNanos, false), supplier, conflationMode);
         this.subscriber = eventBusSubscriber;
         this.filter = filter;
+    }
+
+    public boolean accept(T event) {
+        return filter == null || filter.apply(event);
     }
 
     @Override

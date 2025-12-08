@@ -19,24 +19,43 @@ public class MultiThreadedEventBus<T> extends AbstractRunnableRingBufferedModule
 
     private final int ringBufferLength;
 
+    private final boolean conflatingEventBus;
+
 
     private volatile Map<EventBusSubscriber<T>, MultiThreadedEventBusListener<T>> listeners = new IdentityHashMap<>();
 
     public MultiThreadedEventBus(Class<T> clazz, Supplier<T> supplier,
                                  RingBufferConfiguration ringBufferConfiguration, boolean conflation) throws RingBufferException {
-        super(clazz, ringBufferConfiguration, supplier, conflation);
+        // The conflation should be set only in listeners ringbuffers
+        // to prevent suscribers with filters from missing "their" events
+        super(clazz, ringBufferConfiguration, supplier, false);
         this.ringBufferLength = ringBufferConfiguration.getRingBufferSize();
+        this.conflatingEventBus = conflation;
+    }
+
+    @Override
+    public void publishEvent(T event) throws EventBusException {
+        try {
+            this.pushEvent(event);
+        } catch (EventBusException e) {
+            getLogger().error("Error while pushing into internal ringBuffer " + e.getMessage(), e);
+            throw e;
+        }  catch (Exception e) {
+            String message = "Error while pushing into internal ringBuffer " + e.getMessage();
+            getLogger().error(message, e);
+            throw new EventBusException(message, e);
+        }
     }
 
     @Override
     public void addSubscriber(Class<T> clazz, EventBusSubscriber<T> subscriber) throws EventBusException {
-        doAddSubscriber(clazz, subscriber, supplier, null, conflationMode);
+        doAddSubscriber(clazz, subscriber, supplier, null, conflatingEventBus);
     }
 
     @Override
     public void addSubscriberForFilteredEvents(
             Class<T> clazz, EventBusSubscriber<T> subscriber, Function<T, Boolean> filter) throws EventBusException {
-        doAddSubscriber(clazz, subscriber, supplier, filter, conflationMode);
+        doAddSubscriber(clazz, subscriber, supplier, filter, conflatingEventBus);
     }
 
     private void doAddSubscriber(
@@ -68,7 +87,13 @@ public class MultiThreadedEventBus<T> extends AbstractRunnableRingBufferedModule
     protected void processEvent(T eventBuffer) {
         Map<EventBusSubscriber<T>, MultiThreadedEventBusListener<T>> currentListeners = this.listeners;
         for (MultiThreadedEventBusListener<T> listener : currentListeners.values()) {
-            listener.publishEvent(eventBuffer);
+            try {
+                if (listener.accept(eventBuffer)) {
+                    listener.pushEvent(eventBuffer);
+                }
+             } catch (Exception e) {
+                getLogger().error("Error while pushing event to listener " + e.getMessage(), e);
+            }
         }
     }
 

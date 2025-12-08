@@ -8,7 +8,6 @@ import java.time.Duration;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.slf4j.Logger;
@@ -33,7 +32,6 @@ public abstract class AbstractRunnableRingBufferedModule<T> {
 
     protected final Duration tempo;
 
-    protected Function<T, Boolean> filter = null;
     protected boolean conflationMode;
 
     private final AtomicBoolean ringBufferFull = new AtomicBoolean(false);
@@ -63,13 +61,9 @@ public abstract class AbstractRunnableRingBufferedModule<T> {
         this.tempo = Duration.ofNanos(ringBufferConfiguration.getTempoInNanos());
     }
 
-    public void pushEvent(T event) throws Exception {
+    protected void pushEvent(T event) throws Exception {
         if (event == null) {
             // should never happen
-            return;
-        }
-        if (filter != null && !filter.apply(event)) {
-            // event is filtered
             return;
         }
         boolean ringFull = !internalRingBuffer.push(event);
@@ -79,13 +73,6 @@ public abstract class AbstractRunnableRingBufferedModule<T> {
         }
     }
 
-    public void publishEvent(T event) {
-        try {
-            this.pushEvent(event);
-        } catch (Exception e) {
-            getLogger().error("Error while pushing into internal ringBuffer " + e.getMessage(), e);
-        }
-    }
 
     protected final boolean isStopped() {
         return end;
@@ -148,7 +135,6 @@ public abstract class AbstractRunnableRingBufferedModule<T> {
         return ringBufferFull.get();
     }
 
-    //TODO rework this
     protected abstract void onRingBufferFull(T event) throws Exception;
 
     protected abstract void processEvent(T eventBuffer) throws Exception;

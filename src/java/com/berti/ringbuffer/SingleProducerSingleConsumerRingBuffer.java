@@ -13,7 +13,7 @@ public class SingleProducerSingleConsumerRingBuffer<T> implements RingBuffer<T> 
 
        private final T event;
 
-       // a volatile variable here is enough since
+       // a volatile variable here is enough since there is only one publisher
        private volatile int index;
 
        public IndexedElement(Supplier<T> supplier) {
@@ -47,6 +47,8 @@ public class SingleProducerSingleConsumerRingBuffer<T> implements RingBuffer<T> 
         }
         IndexedElement<T> indexedElement = ringBuffer.get(indexToWrite);
         dataSetter.copyData(event, indexedElement.event);
+
+        // The index must be updated last ecause the consumer will use it to know the event is ready
         indexedElement.index = indexToWrite;
         return true;
     }
@@ -100,13 +102,7 @@ public class SingleProducerSingleConsumerRingBuffer<T> implements RingBuffer<T> 
         while (indexedElement.index != indexToRead) {
             Thread.yield();
         }
-        T result = indexedElement.event;
-        return isElementReadable(result) ? result :null;
-    }
-
-    // TODO review that
-    protected boolean isElementReadable(T result) {
-        return true;
+        return indexedElement.event;
     }
 
     public boolean isEmpty() {
