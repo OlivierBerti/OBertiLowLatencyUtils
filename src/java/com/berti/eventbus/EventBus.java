@@ -1,7 +1,6 @@
 package com.berti.eventbus;
 
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 // We need to know how to instantiate or copy an event
 // So a template interface is better suited than using Object as event class

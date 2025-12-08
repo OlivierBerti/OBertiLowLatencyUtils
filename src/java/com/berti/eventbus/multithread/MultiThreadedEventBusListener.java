@@ -1,13 +1,11 @@
 package com.berti.eventbus.multithread;
 
-import com.berti.data.DataSetter;
 import com.berti.eventbus.EventBusSubscriber;
 import com.berti.ringbuffer.RingBufferException;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +42,7 @@ class MultiThreadedEventBusListener<T> extends AbstractRunnableRingBufferedModul
     @Override
     protected void onRingBufferFull(T event) {
         String msg = "Error while sending event to subscriber : RingBuffer full";
-        LOG.error( msg);;
+        LOG.error( msg);
     }
 
     @Override

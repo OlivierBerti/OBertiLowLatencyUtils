@@ -1,6 +1,5 @@
 package com.berti.eventbus.multithread;
 
-import com.berti.data.DataSetter;
 import com.berti.eventbus.*;
 import com.berti.ringbuffer.RingBufferException;
 
@@ -14,8 +13,6 @@ import org.slf4j.LoggerFactory;
 public class MultiThreadedEventBus<T> extends AbstractRunnableRingBufferedModule<T> implements EventBus<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(MultiThreadedEventBus.class);
-
-    private static final long TEMPO_IN_NANOS = 1000;
 
     private final int ringBufferLength;
 
@@ -68,8 +65,8 @@ public class MultiThreadedEventBus<T> extends AbstractRunnableRingBufferedModule
             throw new EventBusException("Trying to add subscribers after the bus is stopped");
         }
 
-        Map<EventBusSubscriber<T>, MultiThreadedEventBusListener<T>> newListeners = new IdentityHashMap<>();
-        newListeners.putAll(this.listeners);
+        Map<EventBusSubscriber<T>, MultiThreadedEventBusListener<T>> newListeners =
+                new IdentityHashMap<>(this.listeners);
 
         try {
             MultiThreadedEventBusListener<T> listener = new MultiThreadedEventBusListener<> (

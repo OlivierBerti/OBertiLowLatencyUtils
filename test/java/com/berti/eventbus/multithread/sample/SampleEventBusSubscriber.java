@@ -11,8 +11,6 @@ public class SampleEventBusSubscriber implements EventBusSubscriber<SampleEvent>
 
     private static final Logger logger = LoggerFactory.getLogger(SampleEventBusSubscriber.class);
 
-    private static final String FORMATTED_MSG = "{0} received event {3}{1} value = {2} duration = {4} ms";
-
     private final String name;
 
     public SampleEventBusSubscriber(String name) {

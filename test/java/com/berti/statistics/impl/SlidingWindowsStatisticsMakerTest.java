@@ -33,8 +33,7 @@ public class SlidingWindowsStatisticsMakerTest {
 
     private static final int ALERTER_THRESHOLD = 220;
 
-    private static TimeMsMock globalTmeMock = new TimeMsMock();
-
+    private static final TimeMsMock globalTmeMock = new TimeMsMock();
 
     private SlidingWindowStatisticsMaker statisticsMaker;
 
@@ -78,6 +77,7 @@ public class SlidingWindowsStatisticsMakerTest {
     }
 
     @After
+    @SuppressWarnings("unchecked")
     public void tearDown() {
         statisticsMaker.stop();
         ((AbstractRunnableRingBufferedModule<MeasurementPack>) measurementPackBus).stop();
@@ -185,7 +185,6 @@ public class SlidingWindowsStatisticsMakerTest {
 
     private Statistics pollStatistics(boolean shouldProceed) {
         throttler.setShouldProceed(shouldProceed);
-        Statistics result = statisticsMaker.getLatestStatistics();
-        return result;
+        return statisticsMaker.getLatestStatistics();
     }
 }

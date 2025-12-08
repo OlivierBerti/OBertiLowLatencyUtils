@@ -3,8 +3,6 @@ package com.berti.ringbuffer;
 import com.berti.data.SampleEvent;
 import com.berti.data.SampleEventDataSetter;
 
-import com.berti.ringbuffer.RingBufferException;
-import com.berti.ringbuffer.SingleProducerSingleConsumerRingBuffer;
 import org.junit.Before;
 import org.junit.Test;
 

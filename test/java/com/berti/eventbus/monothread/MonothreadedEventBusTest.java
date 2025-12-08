@@ -6,11 +6,8 @@ import com.berti.eventbus.EventBus;
 import com.berti.eventbus.EventBusException;
 import com.berti.eventbus.EventBusFactory;
 import com.berti.eventbus.EventBusSubscriber;
-import com.berti.eventbus.multithread.MultiThreadedEventBus;
-import com.berti.eventbus.multithread.RingBufferConfiguration;
 import com.berti.ringbuffer.DataSetterRegistry;
 import com.berti.util.TimeUtils;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -22,11 +19,6 @@ import java.util.function.Function;
 import static org.junit.Assert.assertEquals;
 
 public class MonothreadedEventBusTest {
-
-    private static final long TEMPO_IN_NANOS = 1000;
-
-    private static final int RING_BUFFER_LENGTH = 1024;
-
 
     private static final class SampleEventBusSubscriber implements EventBusSubscriber<SampleEvent> {
 
@@ -48,26 +40,23 @@ public class MonothreadedEventBusTest {
 
     private EventBus<SampleEvent> eventBus;
 
-    private SampleEventBusSubscriber subscriber1;
-    private SampleEventBusSubscriber subscriber2;
-
-    private Function<SampleEvent, Boolean> filter;
+    private SampleEventBusSubscriber fullSubscriber;
+    private SampleEventBusSubscriber filteredSubscriber;
 
 
     @Before
     public void setUp() throws Exception {
         DataSetterRegistry.register(SampleEvent.class, new SampleEventDataSetter());
-        subscriber1 = new SampleEventBusSubscriber();
-        subscriber2 = new SampleEventBusSubscriber();
+        fullSubscriber = new SampleEventBusSubscriber();
+        filteredSubscriber = new SampleEventBusSubscriber();
 
-        filter = x-> x.getValue()%3==0;
+        Function<SampleEvent, Boolean> filter = x-> x.getValue()%3==0;
 
-        RingBufferConfiguration ringbufferConfiguration = new RingBufferConfiguration(RING_BUFFER_LENGTH, TEMPO_IN_NANOS, true);
         eventBus = EventBusFactory.getInstance().createMonothreadedEventBus(
                 SampleEvent.class, SampleEvent::new);
 
-        eventBus.addSubscriber(SampleEvent.class, subscriber1);
-        eventBus.addSubscriberForFilteredEvents(SampleEvent.class, subscriber2, filter);
+        eventBus.addSubscriber(SampleEvent.class, fullSubscriber);
+        eventBus.addSubscriberForFilteredEvents(SampleEvent.class, filteredSubscriber, filter);
     }
 
     @Test
@@ -84,16 +73,16 @@ public class MonothreadedEventBusTest {
 
         TimeUtils.sleepMillis(1000);
 
-        assertEquals(4, subscriber1.nbEvents());
-        assertEquals(2, subscriber2.nbEvents());
+        assertEquals(4, fullSubscriber.nbEvents());
+        assertEquals(2, filteredSubscriber.nbEvents());
 
-        assertEquals(3, subscriber1.getEvent(0).getValue());
-        assertEquals(1, subscriber1.getEvent(1).getValue());
-        assertEquals(4, subscriber1.getEvent(2).getValue());
-        assertEquals(21, subscriber1.getEvent(3).getValue());
+        assertEquals(3, fullSubscriber.getEvent(0).getValue());
+        assertEquals(1, fullSubscriber.getEvent(1).getValue());
+        assertEquals(4, fullSubscriber.getEvent(2).getValue());
+        assertEquals(21, fullSubscriber.getEvent(3).getValue());
 
-        assertEquals(3, subscriber2.getEvent(0).getValue());
-        assertEquals(21, subscriber2.getEvent(1).getValue());
+        assertEquals(3, filteredSubscriber.getEvent(0).getValue());
+        assertEquals(21, filteredSubscriber.getEvent(1).getValue());
     }
 
     private SampleEvent createSampleEvent(int numEvent, int value) {

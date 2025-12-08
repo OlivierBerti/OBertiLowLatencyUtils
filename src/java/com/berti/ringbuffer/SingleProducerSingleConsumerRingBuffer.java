@@ -9,7 +9,7 @@ import java.util.function.Supplier;
 // In a real dev I certainly would use LMAX Disruptor
 public class SingleProducerSingleConsumerRingBuffer<T> implements RingBuffer<T> {
 
-    private static final class IndexedElement<T> {
+    protected static final class IndexedElement<T> {
 
        private final T event;
 

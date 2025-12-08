@@ -45,6 +45,7 @@ public class DataArrayList<T> {
         usedSize++;
     }
 
+    @SuppressWarnings("unchecked")
     private void doubleCapacity() {
         T[] newArray = (T[]) Array.newInstance(objectType, array.length * 2);
         System.arraycopy(array, 0, newArray, 0, this.usedSize);
@@ -85,7 +86,6 @@ public class DataArrayList<T> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;
